@@ -1,0 +1,2356 @@
+<!-- OmeH_ai_mobile_v2f-1.52 · 15 Aout 2026 · Makom Intelligence™ · CorreIA LLC
+     Héritage v2e : toutes les fonctionnalités conservées intégralement
+     Ajout v2f-1 : initTerritoire() · GET /v1/territoire + GET /v1/voiries au démarrage
+     Ajout v2f-2 : haversineKm · plusProcheAdresse · plusProcheVoirie
+     Ajout v2f-3 : _territoireActif enrichi · rue · numero · voirieProche · distVoirie
+     Ajout v2f-4 : persistTerritoire / restoreTerritoire · sessionStorage
+     Ajout v2f-5 : lonLatToICL · fallback ICL local hors API
+     Ajout v2f-6 : POST /v1/resolve-presence depuis GPS
+     Ajout v2f-7 : indicateur de chargement territorial
+     Ajout v2f-8 : Cas B · suggestions de rues proches · numéro mémorisé · confirmation avant SEARCH_NUMBER
+     Ajout v2f-9 : _casBNumero / _casBEnAttente / _casBRueConfirmee · état multi-tour Cas B
+     Ajout v2f-10 : Cas B · séquence stricte SÉQ1/SÉQ2/SÉQ3 · chaque étape conditionne la suivante
+     Ajout v2f-11 : SÉQ1 · interrogate appelé avec question neutre · Structure C affichée sans bruit
+     Ajout v2f-12 : détection nom de rue seul (sans numéro) · SEARCH_PLACE · Levenshtein · Structure C
+     Ajout v2f-13 : _searchPlace retourne icl_debut/icl_fin · LOI anti-verbalisation CORPUS + questions neutres
+     Ajout v2f-14 : _searchPlace · moteur 4 passes · normalisation apostrophes · tokenisation · score pertinence
+     Ajout v2f-1.34 : suppression espace bas · bottom-nav fond bleu · icônes blanches · texte version retiré
+     Ajout v2f-1.35 : Maʿavar haKtav™ · mkNormalize · mkTokenize · mkLev · mkScore 4 passes · mkFilter Gevul · seuil 0.5
+     Ajout v2f-1.36 : bloc tests autonome · 5 tests · RUE PROF JOSEPH YAO YAO · console navigateur
+     Ajout v2f-1.37 : console.group → console.log · compatibilité navigateur mobile
+     Ajout v2f-1.38 : tests affichés dans la page · panneau HTML fixe · bouton fermer
+     Ajout v2f-1.39 : parseAdresse · détection N°+Rue n'importe où dans la phrase · extraction fragment rue avant SEARCH_PLACE
+     Ajout v2f-1.40 : LOI D'EXTRACTION · parseAdresse ancre sur numéro · extractRueFragment ancre sur voirie ou ≥ 3 chars
+     Ajout v2f-1.41 : LOI POSITION/DISTANCE/ICL · valeurs réelles injectées · suppression placeholders [X] [ICL] [position] [total]
+     Ajout v2f-1.42 : inscription des 3 lois fondatrices du moteur de recherche adresse
+     Ajout v2f-1.43 : SEQ-MARTIN · LOI 0 → LOI 1 → LOI 2 codées · NAMES_DIFFER → CORRECTION_PROPOSED → CONFIRMED · SIGNAL_BOTH_NUMBERS si exact:false
+     Ajout v2f-1.44 : LOI 3 · HISHTAQQUT haMispar · SIGNAL_BOTH_NUMBERS → AWAIT_NUMBER_APPROVAL → NUMBER_APPROVED/REJECTED → PRESENT_RESULT
+     Ajout v2f-1.45 : LOI 0 · SEARCH_NUMBER immédiat après confirmation rue · si _casBNumero mémorisé · plus d'attente de resaisie
+     Ajout v2f-1.46 : LOI 4 · RESHIMAT haBehirah · GHVUL haMitsar (max 3) · SEDER haZikaron (mémoriser avant émission) · SÉQ1 ouverte sans _casBNumero
+     Ajout v2f-1.47 : LOI 3 · approbation implicite par numéro · saisie '68' reconnue si = _loi3NumeroSubstitue
+     Ajout v2f-1.48 : LOI 5 · SEQ-MARTIN-LOI5 · CHECK_GPS_ACTIVE → COMPUTE_DISTANCE → distance injectée dans Structure C si GPS actif · omise si absent
+     Ajout v2f-1.49 : LOI 6 · OR haMakom · OR haVoirie (N points annoncés · Structure C) · OR haAdresse (point unique · voisins supprimés · annonce garantie · Structure D)
+     Ajout v2f-1.50 : LOI 7 · SHLIMUT haNitun · SÉQ2 condition _casBNumero !== null retirée · ICL et distance accessibles depuis saisie numéro directe
+     Ajout v2f-1.51 : nettoyage résidus · normalizeR/levenshteinR supprimés · mkNormalize/mkScore/mkFilter unifiés · LOI VOISINS retirée · talResult.voisins retiré · SCÉNARIO 2 CAS B retiré
+     Ajout v2f-1.52 : bloc tests runMkTests supprimé · panneau mk-test-panel retiré · plus de chargement automatique
+     ──────────────────────────────────────────────────────────────────────────────────────
+     LOI 0 : La rue est la clé · le numéro est secondaire
+             La rue porte un nom unique dans le territoire
+             Le numéro peut appartenir à plusieurs rues différentes
+             Ordre obligatoire : SEARCH_PLACE d'abord · SEARCH_NUMBER seulement après confirmation de rue
+     LOI 1 : Toute correction doit être nommée
+             Si st_name retourné ≠ saisie habitant → confirmation obligatoire avant SEARCH_NUMBER
+             Martin ne présente jamais une rue corrigée comme si c'était la demande originale
+             La correction est proposée · jamais imposée
+     LOI 2 : Le numéro saisi et le numéro trouvé sont distincts
+             Si exact:false → signaler explicitement le numéro saisi et le numéro affiché
+             Martin ne présente jamais le numéro corrigé comme la demande originale
+             Format : "Le [SAISI] n'est pas indexé · l'adresse la plus proche est le [TROUVÉ]"
+     ──────────────────────────────────────────────────────────────────────────────────────
+     Loi : le sol vient de l'API · jamais de données embarquées dans le HTML mobile
+-->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<title>Martin · Scribe du Lieu · Territoire Conversationnel</title>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@400,0&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue: #2e659a;
+  --blue-light: #e8f0f9;
+  --orange: #f5a623;
+  --orange-light: #fff4e0;
+  --gray-50: #F9FAFB;
+  --gray-100: #F3F4F6;
+  --gray-200: #E5E7EB;
+  --gray-300: #D1D5DB;
+  --gray-500: #6B7280;
+  --gray-800: #1F2937;
+  --white: #ffffff;
+  --canvas: #f0f2f5;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: 'Hanken Grotesk', sans-serif;
+  background: var(--canvas);
+  background-image: radial-gradient(#D1D5DB 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--gray-800);
+}
+.app {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 40px rgba(0,0,0,.12);
+}
+
+/* MAP BACKGROUND */
+.map-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: #e8e0d8;
+  overflow: hidden;
+}
+#leaflet-map { width: 100%; height: 100%; }
+
+/* GLASS */
+.glass {
+  background: rgba(255,255,255,.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,.5);
+}
+
+/* TOPBAR */
+.topbar {
+  position: relative;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  margin: 10px 10px 0;
+  border-radius: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.08);
+}
+.topbar-brand { display: flex; flex-direction: column; align-items: center; }
+.topbar-logo { display: flex; align-items: center; gap: 6px; }
+.topbar-logo-icon {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+}
+.topbar-logo-icon img { width: 36px; height: 36px; object-fit: contain; }
+.brand-name { font-size: 26px; font-weight: 700; line-height: 1; }
+.brand-name span:first-child { color: var(--blue); }
+.brand-name span:last-child { color: var(--orange); }
+.brand-sub { font-size: 9px; color: var(--gray-500); font-weight: 500; letter-spacing: .04em; margin-top: 2px; }
+.topbar-btn {
+  width: 36px; height: 36px; border-radius: 50%; border: none;
+  background: var(--gray-100); cursor: pointer; display: flex;
+  align-items: center; justify-content: center; color: var(--gray-500);
+  transition: background .15s;
+}
+.topbar-btn:hover { background: var(--gray-200); }
+.topbar-btn .material-symbols-outlined { font-size: 20px; }
+.avatar-btn {
+  width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--blue);
+  overflow: hidden; cursor: pointer; background: var(--blue-light);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--blue); font-weight: 700; font-size: 13px;
+}
+
+/* ICL BADGE */
+.icl-badge {
+  position: relative; z-index: 25;
+  margin: 8px 10px 0;
+  padding: 8px 14px;
+  border-radius: 14px;
+  display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.08);
+  transition: all .3s;
+}
+.icl-pulse {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--orange); flex-shrink: 0; position: relative;
+}
+.icl-pulse::after {
+  content: ''; position: absolute; inset: -3px;
+  border-radius: 50%; background: var(--orange);
+  opacity: .3; animation: ping 2s ease-in-out infinite;
+}
+@keyframes ping { 0%,100%{transform:scale(1);opacity:.3} 50%{transform:scale(1.6);opacity:0} }
+.icl-text { flex: 1; min-width: 0; }
+.icl-label { font-size: 9px; font-weight: 600; color: var(--blue); text-transform: uppercase; letter-spacing: .08em; }
+.icl-value { font-size: 13px; font-weight: 700; color: var(--gray-800); font-variant-numeric: tabular-nums; }
+.icl-shem { font-size: 10px; color: var(--gray-500); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gps-btn-inline {
+  flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%;
+  border: none; background: var(--blue); color: white;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(46,101,154,.35); transition: all .2s;
+}
+.gps-btn-inline.active { background: var(--orange); }
+.gps-btn-inline .material-symbols-outlined { font-size: 16px; }
+
+/* INFO BANNER */
+.info-banner {
+  position: relative; z-index: 24;
+  margin: 6px 10px 0;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.07);
+  background: white;
+  overflow: hidden;
+}
+.info-banner-title {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 14px 5px;
+  font-size: 9px; font-weight: 700; color: var(--blue);
+  text-transform: uppercase; letter-spacing: .08em;
+  background: white;
+  position: relative; z-index: 10;
+  border-bottom: 1px solid rgba(46,101,154,.07);
+}
+.info-banner-scroll {
+  height: 52px;
+  overflow: hidden;
+  position: relative;
+}
+.info-banner-inner {
+  display: flex; flex-direction: column;
+}
+.info-item {
+  height: 52px; padding: 0 14px;
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+  background: white;
+}
+.info-item-pulse {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: white; flex-shrink: 0; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  overflow: visible;
+}
+.info-item-pulse img {
+  width: 20px; height: 20px; object-fit: contain; border-radius: 0; 
+  position: relative; z-index: 2;
+}
+.info-item-pulse::before {
+  content: ''; position: absolute;
+  width: 100%; height: 100%; border-radius: 50%;
+  background: var(--orange);
+  opacity: .22; animation: ping 3.8s ease-in-out infinite;
+  z-index: 1;
+}
+.info-item-pulse::after {
+  content: ''; position: absolute;
+  width: 100%; height: 100%; border-radius: 50%;
+  border: 2px solid var(--orange);
+  opacity: .35; animation: ping 3.8s ease-in-out infinite 1s;
+  z-index: 1;
+}
+.info-item-text { flex: 1; font-size: 11px; color: var(--gray-800); line-height: 1.3; }
+.info-btn {
+  flex-shrink: 0; font-size: 9px; font-weight: 700; color: var(--blue);
+  background: var(--blue-light); border: none; border-radius: 20px;
+  padding: 4px 8px; cursor: pointer; display: flex; align-items: center; gap: 2px;
+  white-space: nowrap;
+}
+.info-anim { animation: bannerScroll 8s infinite; }
+@keyframes bannerScroll { 0%,42%{transform:translateY(0)} 52%,100%{transform:translateY(-52px)} }
+
+/* CHIPS */
+.chips {
+  position: relative; z-index: 25;
+  margin: 6px 10px 0;
+  display: flex; gap: 6px; justify-content: center;
+  -ms-overflow-style: none; scrollbar-width: none;
+}
+.chips::-webkit-scrollbar { display: none; }
+.chip {
+  padding: 0 4px; border-radius: 0; border: none;
+  background: transparent; backdrop-filter: none;
+  font-size: 10px; font-weight: 500; color: rgba(80,70,60,.7);
+  font-style: italic; letter-spacing: .02em;
+  white-space: nowrap; cursor: pointer; transition: all .15s;
+  background: rgba(255,255,255,.72); backdrop-filter: blur(6px);
+  padding: 2px 8px; border-radius: 4px;
+  box-shadow: none;
+}
+.chip:hover, .chip.active { background: transparent; color: rgba(46,101,154,.7); border-color: transparent; }
+
+/* MAP CONTROLS */
+.map-controls {
+  position: absolute; right: 12px; z-index: 50;
+  top: 50%; transform: translateY(-50%);
+  display: flex; flex-direction: column; gap: 8px;
+  pointer-events: auto;
+}
+.map-btn {
+  width: 40px; height: 40px; border-radius: 50%; border: none;
+  background: var(--blue); color: white; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 3px 10px rgba(46,101,154,.3); transition: all .2s;
+}
+.map-btn.orange { background: var(--orange); box-shadow: 0 3px 10px rgba(245,166,35,.3); }
+.map-btn:hover { transform: scale(1.08); }
+.map-btn .material-symbols-outlined { font-size: 20px; }
+.map-btn.active {
+  background: var(--orange) !important;
+  box-shadow: 0 0 0 0 rgba(245,166,35,0.7);
+  animation: gps-pulse 1.8s ease-in-out infinite;
+}
+@keyframes gps-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(245,166,35,0.7); }
+  60%  { box-shadow: 0 0 0 10px rgba(245,166,35,0); }
+  100% { box-shadow: 0 0 0 0 rgba(245,166,35,0); }
+}
+
+/* POPUP PADA */
+.pada-popup .leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  padding: 4px 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+.pada-popup .leaflet-popup-content { margin: 6px 8px; }
+.pada-popup .leaflet-popup-tip-container { display: none; }
+
+/* CONVERSATION AREA */
+.conv-area {
+  position: relative; z-index: 24;
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  padding: 8px 64px 0 10px;
+  display: flex; flex-direction: column; gap: 8px;
+  -ms-overflow-style: none; scrollbar-width: none;
+  min-height: 0;
+}
+.conv-area::-webkit-scrollbar { display: none; }
+
+/* MESSAGES */
+.msg-user-wrap {
+  display: flex; justify-content: flex-end;
+  align-items: flex-end; gap: 6px; margin: 4px 0;
+}
+.msg-user {
+  align-self: flex-end; max-width: 82%;
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,.5);
+  border-radius: 18px 18px 4px 18px;
+  padding: 10px 14px;
+  font-size: 13px; line-height: 1.4;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+.msg-ai-wrap { display: flex; gap: 8px; align-items: flex-end; max-width: 88%; }
+.msg-ai-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: white; border: 1.5px solid rgba(46,101,154,.15);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-bottom: 2px; overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,.10);
+}
+.msg-ai-avatar img {
+  width: 22px; height: 22px; object-fit: contain;
+}
+.msg-user-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--blue); color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0; margin-bottom: 2px;
+  overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.12);
+}
+.msg-user-avatar img { width: 30px; height: 30px; object-fit: cover; }
+.msg-ai {
+  background: rgba(255,255,255,.88);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,.5);
+  border-radius: 18px 18px 18px 4px;
+  padding: 10px 14px;
+  font-size: 13px; line-height: 1.5;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  flex: 1;
+}
+.msg-ai .msg-detail-btn {
+  display: inline-flex; align-items: center; gap: 2px;
+  font-size: 10px; font-weight: 600; color: var(--blue);
+  border: none; background: none; cursor: pointer; margin-top: 6px;
+}
+.msg-ai .msg-detail-btn .material-symbols-outlined { font-size: 13px; }
+.msg-loading { color: var(--gray-500); font-style: italic; }
+.msg-typing span {
+  display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--gray-300); margin: 0 1px;
+  animation: typingDot 1.2s infinite;
+}
+.msg-typing span:nth-child(2) { animation-delay: .2s; }
+.msg-typing span:nth-child(3) { animation-delay: .4s; }
+@keyframes typingDot { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
+
+/* BOTTOM AREA */
+.bottom {
+  position: relative; z-index: 40;
+  padding: 8px 10px 0;
+  display: flex; flex-direction: column; gap: 6px;
+  pointer-events: auto;
+}
+.input-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 6px 6px 14px;
+  border-radius: 28px;
+  box-shadow: 0 4px 18px rgba(0,0,0,.1);
+}
+.input-row input {
+  flex: 1; background: transparent; border: none; outline: none;
+  font-family: inherit; font-size: 14px; color: var(--gray-800);
+}
+.input-row input::placeholder { color: var(--gray-300); }
+.mic-btn {
+  width: 34px; height: 34px; border-radius: 50%; border: none;
+  background: transparent; cursor: pointer; color: var(--gray-500);
+  display: flex; align-items: center; justify-content: center; transition: color .15s;
+}
+.mic-btn:hover { color: var(--blue); }
+.mic-btn .material-symbols-outlined { font-size: 20px; }
+.send-btn {
+  width: 38px; height: 38px; border-radius: 50%; border: none;
+  background: var(--orange); color: white; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 10px rgba(245,166,35,.4); transition: all .2s; flex-shrink: 0;
+}
+.send-btn:hover { transform: scale(1.08); background: #e09415; }
+.send-btn .material-symbols-outlined { font-size: 18px; }
+
+/* BOTTOM NAV */
+.bottom-nav {
+  display: flex; justify-content: space-around; align-items: center;
+  padding: 10px 20px;
+  border-radius: 28px 28px 0 0;
+  background: var(--blue) !important;
+  box-shadow: 0 4px 18px rgba(46,101,154,.35);
+}
+.nav-btn {
+  border: none; background: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  color: rgba(255,255,255,.55); transition: color .15s; position: relative;
+  padding: 2px 10px;
+}
+.nav-btn.active { color: rgba(255,255,255,1); }
+.nav-btn .material-symbols-outlined { font-size: 24px; }
+.nav-badge {
+  position: absolute; top: -2px; right: 4px;
+  background: #ef4444; color: white; font-size: 8px; font-weight: 700;
+  width: 14px; height: 14px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid white;
+}
+
+/* KEY MODAL */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 999;
+  background: rgba(30,24,16,.5); backdrop-filter: blur(4px);
+  align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: #FFF8F0; border-radius: 22px;
+  padding: 28px 24px; width: min(380px, 90vw);
+  box-shadow: 0 20px 60px rgba(140,68,10,.18);
+  border: 1px solid #E8D4B8;
+}
+.modal-title { font-size: 15px; font-weight: 700; color: var(--gray-800); margin-bottom: 6px; }
+.modal-sub { font-size: 12px; color: #7A6A58; margin-bottom: 18px; line-height: 1.5; }
+.modal-input {
+  width: 100%; border: 1.5px solid #E8D4B8; border-radius: 12px;
+  padding: 10px 13px; font-size: 13px; font-family: monospace;
+  background: #FFFDF9; color: var(--gray-800); outline: none;
+}
+.modal-input:focus { border-color: var(--blue); }
+.modal-err { color: #c0392b; font-size: 11px; margin-top: 5px; display: none; }
+.modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+.modal-save {
+  flex: 1; background: var(--blue); color: white; border: none;
+  border-radius: 12px; padding: 11px; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: background .15s;
+}
+.modal-save:hover { background: #1a4a7a; }
+.modal-cancel {
+  background: #F0E8DC; color: #7A6A58; border: none;
+  border-radius: 12px; padding: 11px 16px; font-size: 13px;
+  cursor: pointer;
+}
+.modal-footer { font-size: 10px; color: #B0A090; text-align: center; margin-top: 12px; }
+
+/* KEY TRIGGER */
+.key-trigger {
+  position: fixed; bottom: 16px; right: 16px; z-index: 500;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--blue); border: none; color: white;
+  font-size: 15px; cursor: pointer; opacity: .55;
+  box-shadow: 0 3px 10px rgba(46,101,154,.3); transition: opacity .2s;
+}
+.key-trigger:hover { opacity: 1; }
+
+/* WELCOME MSG */
+.welcome-msg {
+  align-self: flex-start; max-width: 88%;
+  display: flex; gap: 8px; align-items: flex-end;
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- MAP -->
+  <div class="map-bg">
+    <div id="leaflet-map"></div>
+  </div>
+
+  <!-- TOPBAR -->
+  <header class="topbar glass">
+    <button class="topbar-btn" aria-label="Menu">
+      <span class="material-symbols-outlined">menu</span>
+    </button>
+    <div class="topbar-brand">
+      <div class="topbar-logo">
+        <div class="topbar-logo-icon">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADsAAABICAYAAABIk43cAAAFO0lEQVR42u2Zy4scVRTGv3NvVfUzJtFoIPGRYGIgk+WsIpoIgggScDG4UhBRd4IP3LiobhBUXPgHaDYBRUcI6k5RSFwoakADiQqK+CD4yIRk0s+quvd8LronDzOjM+lOptX7g0s1Tdep+51z76lzbgOBQCAQCAQCgUAgEAgEApOCjMvQzOys3Xl8hkADANBoNLjiyQgACP9PATB79qTRzMysncjIprOzSev0ddOlKD6zvmoydUVmSlWXZ32pAkB18fu63cE1KZW55ZpaPnPPVDsSyf15ywZsEDKeaI8kNk1T02w29bkDh7d+9e2vP+TOwwCOoAPgRWSRpSpQKlrtPrxysHQpFIPCGjMfx/aXarn8+eZrawdfe+a+TwgApIxDcDTKzV9PTQkAnJprb8082O/nFGMiEVnSLkG0O30Ubij0Ik+Y9ZJxy3y/f8fJ+d7Tdz/7+lsP7b31sQdFWuMQPJLYP45fLwDQ7mU7xMZibeYGq4WXSBQIdCjUOYUxi/3ME97TuYwFKA7rHtj/wTc38MiRe6TR8OeMXW4yGMdeyAq/U0mQlOHW+MsQUVDanb44ryIiAi72OxgAVkQiI8a63pm87ZO77n/3u4fRbOqeNLWrFtnDzUMKALnzO9QLRBbPAQTR6mRwnhCRZcdGxNg86+vcGTxO8lUReKCJ1YisAE0laQuvW9U7gJdmJAJodzI4pwNPcEVPMOpyo5Splw5+thkQpmlqrrrYNE0FAJ5/8+NNeeG3eO+gJFSpSnqC3lP92XbXZ4XzEHpy0eFIOICXuIFKSSLR2pp66cefTt12YVK8ysu4AaCJdiffUKmU2+hna42NDMSC5yLah02qiEqydGoRwCvgsi4ECmCwF5REEkeoVhIVsSbzxS0XJsWrKrbZFAWAFx+5++iBD7/Z9u3Pcxvb/e4657SeeY19VpQ7cdlY+7floahnud0vpuYQPdrPdT3oqaQksUW9WgJJKInfTnVLq/qeHRYJCuDUcFw2j73y3jtffj93uNvzthxbqVfLF+37XpZz1cUOChxKowH5euptOf8OPr7s5db+dZO8+uS+T29/Yv8XLFd218rwIMZeG49FrAwqm8v2/J40jQjKuvobxzua7PZZl4LxY8ZliIQsNf757r0AhPVq5aQxZrHEPDmRHSabkWdYOH9Wxuf/K7dnjx49ekkjt3HjRpw4cYLT09Pd5TmMV7RxH0ks09RIs6m/fPTUpk2/H/rEai8hLTk4dNAkUnMj6ieOHePuXbsk56Ba5NJ7ymBixS7gi25sXevmiunCwwyLAqACInNEkkAwAYxnGXtLwmSZM4nCcNjRqBEawuYTc94zPlOUYdczuMrwCsp/UOy/4CQviB3Xwl74sH2ECYpASXSzYvjNodUvKpaoqmDMaP5UEr1OH70sm8zIcjjJODJYUy2NZKfVzVA4RWzshIolkFiDUrUEGSGygyNXPzhr1gnbs4RACcTWoFarALLyt44sRPQCoQAnLEGJUJWMrbBWK9EaIYgVtn4KAmx3MxbOU+RybFzhBFUGoN5H9VikUi0PGhdVC0vA6bKf4RSm1ckkz4vI2GjQJFMjQoRUmQixGlHjUm2+UqklMJZKCuygXERUObt9mZFxrsiNkXatnHhAhhnJeptY67U0ctk5llJudnbG3nvTtg11U0inC6AK1Cox0SuklcX+mjtfOLkcOy8feL/G8ro1p+dbTCIrAJA7z2TtGsHp3882H9/XReAqRnahgV/qESs4xRAu0b8P//5kCFkgEAgEAoFAIBAIBAKBwL+OPwGnRqv/qNwy6QAAAABJRU5ErkJggg==" alt="CorreIA LLC · Hé">
+        </div>
+        <div class="brand-name"><span>Ome</span><span>H.ai</span></div>
+      </div>
+      <div class="brand-sub">Territoire conversationnel</div>
+    </div>
+    <div class="avatar-btn">MH</div>
+  </header>
+
+  <!-- ICL BADGE supprimé v2d -->
+
+  <!-- INFO BANNER · Informations Territoriales -->
+  <div class="info-banner glass">
+    <div class="info-banner-title">Informations Territoriales</div>
+    <div class="info-banner-scroll">
+      <div class="info-banner-inner info-anim">
+        <div class="info-item">
+          <div class="info-item-pulse">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADsAAABICAYAAABIk43cAAAFO0lEQVR42u2Zy4scVRTGv3NvVfUzJtFoIPGRYGIgk+WsIpoIgggScDG4UhBRd4IP3LiobhBUXPgHaDYBRUcI6k5RSFwoakADiQqK+CD4yIRk0s+quvd8LronDzOjM+lOptX7g0s1Tdep+51z76lzbgOBQCAQCAQCgUAgEAgEApOCjMvQzOys3Xl8hkADANBoNLjiyQgACP9PATB79qTRzMysncjIprOzSev0ddOlKD6zvmoydUVmSlWXZ32pAkB18fu63cE1KZW55ZpaPnPPVDsSyf15ywZsEDKeaI8kNk1T02w29bkDh7d+9e2vP+TOwwCOoAPgRWSRpSpQKlrtPrxysHQpFIPCGjMfx/aXarn8+eZrawdfe+a+TwgApIxDcDTKzV9PTQkAnJprb8082O/nFGMiEVnSLkG0O30Ubij0Ik+Y9ZJxy3y/f8fJ+d7Tdz/7+lsP7b31sQdFWuMQPJLYP45fLwDQ7mU7xMZibeYGq4WXSBQIdCjUOYUxi/3ME97TuYwFKA7rHtj/wTc38MiRe6TR8OeMXW4yGMdeyAq/U0mQlOHW+MsQUVDanb44ryIiAi72OxgAVkQiI8a63pm87ZO77n/3u4fRbOqeNLWrFtnDzUMKALnzO9QLRBbPAQTR6mRwnhCRZcdGxNg86+vcGTxO8lUReKCJ1YisAE0laQuvW9U7gJdmJAJodzI4pwNPcEVPMOpyo5Splw5+thkQpmlqrrrYNE0FAJ5/8+NNeeG3eO+gJFSpSnqC3lP92XbXZ4XzEHpy0eFIOICXuIFKSSLR2pp66cefTt12YVK8ysu4AaCJdiffUKmU2+hna42NDMSC5yLah02qiEqydGoRwCvgsi4ECmCwF5REEkeoVhIVsSbzxS0XJsWrKrbZFAWAFx+5++iBD7/Z9u3Pcxvb/e4657SeeY19VpQ7cdlY+7floahnud0vpuYQPdrPdT3oqaQksUW9WgJJKInfTnVLq/qeHRYJCuDUcFw2j73y3jtffj93uNvzthxbqVfLF+37XpZz1cUOChxKowH5euptOf8OPr7s5db+dZO8+uS+T29/Yv8XLFd218rwIMZeG49FrAwqm8v2/J40jQjKuvobxzua7PZZl4LxY8ZliIQsNf757r0AhPVq5aQxZrHEPDmRHSabkWdYOH9Wxuf/K7dnjx49ekkjt3HjRpw4cYLT09Pd5TmMV7RxH0ks09RIs6m/fPTUpk2/H/rEai8hLTk4dNAkUnMj6ieOHePuXbsk56Ba5NJ7ymBixS7gi25sXevmiunCwwyLAqACInNEkkAwAYxnGXtLwmSZM4nCcNjRqBEawuYTc94zPlOUYdczuMrwCsp/UOy/4CQviB3Xwl74sH2ECYpASXSzYvjNodUvKpaoqmDMaP5UEr1OH70sm8zIcjjJODJYUy2NZKfVzVA4RWzshIolkFiDUrUEGSGygyNXPzhr1gnbs4RACcTWoFarALLyt44sRPQCoQAnLEGJUJWMrbBWK9EaIYgVtn4KAmx3MxbOU+RybFzhBFUGoN5H9VikUi0PGhdVC0vA6bKf4RSm1ckkz4vI2GjQJFMjQoRUmQixGlHjUm2+UqklMJZKCuygXERUObt9mZFxrsiNkXatnHhAhhnJeptY67U0ctk5llJudnbG3nvTtg11U0inC6AK1Cox0SuklcX+mjtfOLkcOy8feL/G8ro1p+dbTCIrAJA7z2TtGsHp3882H9/XReAqRnahgV/qESs4xRAu0b8P//5kCFkgEAgEAoFAIBAIBAKBwL+OPwGnRqv/qNwy6QAAAABJRU5ErkJggg==" alt="CorreIA">
+          </div>
+          <div class="info-item-text">Coupure d'électricité le 22 Août 2026 de 10H à 12H dans la zone de Cocody Riviéra.</div>
+          <button class="info-btn">Détails <span class="material-symbols-outlined" style="font-size:11px">arrow_forward</span></button>
+        </div>
+        <div class="info-item">
+          <div class="info-item-pulse">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADsAAABICAYAAABIk43cAAAFO0lEQVR42u2Zy4scVRTGv3NvVfUzJtFoIPGRYGIgk+WsIpoIgggScDG4UhBRd4IP3LiobhBUXPgHaDYBRUcI6k5RSFwoakADiQqK+CD4yIRk0s+quvd8LronDzOjM+lOptX7g0s1Tdep+51z76lzbgOBQCAQCAQCgUAgEAgEApOCjMvQzOys3Xl8hkADANBoNLjiyQgACP9PATB79qTRzMysncjIprOzSev0ddOlKD6zvmoydUVmSlWXZ32pAkB18fu63cE1KZW55ZpaPnPPVDsSyf15ywZsEDKeaI8kNk1T02w29bkDh7d+9e2vP+TOwwCOoAPgRWSRpSpQKlrtPrxysHQpFIPCGjMfx/aXarn8+eZrawdfe+a+TwgApIxDcDTKzV9PTQkAnJprb8082O/nFGMiEVnSLkG0O30Ubij0Ik+Y9ZJxy3y/f8fJ+d7Tdz/7+lsP7b31sQdFWuMQPJLYP45fLwDQ7mU7xMZibeYGq4WXSBQIdCjUOYUxi/3ME97TuYwFKA7rHtj/wTc38MiRe6TR8OeMXW4yGMdeyAq/U0mQlOHW+MsQUVDanb44ryIiAi72OxgAVkQiI8a63pm87ZO77n/3u4fRbOqeNLWrFtnDzUMKALnzO9QLRBbPAQTR6mRwnhCRZcdGxNg86+vcGTxO8lUReKCJ1YisAE0laQuvW9U7gJdmJAJodzI4pwNPcEVPMOpyo5Splw5+thkQpmlqrrrYNE0FAJ5/8+NNeeG3eO+gJFSpSnqC3lP92XbXZ4XzEHpy0eFIOICXuIFKSSLR2pp66cefTt12YVK8ysu4AaCJdiffUKmU2+hna42NDMSC5yLah02qiEqydGoRwCvgsi4ECmCwF5REEkeoVhIVsSbzxS0XJsWrKrbZFAWAFx+5++iBD7/Z9u3Pcxvb/e4657SeeY19VpQ7cdlY+7floahnud0vpuYQPdrPdT3oqaQksUW9WgJJKInfTnVLq/qeHRYJCuDUcFw2j73y3jtffj93uNvzthxbqVfLF+37XpZz1cUOChxKowH5euptOf8OPr7s5db+dZO8+uS+T29/Yv8XLFd218rwIMZeG49FrAwqm8v2/J40jQjKuvobxzua7PZZl4LxY8ZliIQsNf757r0AhPVq5aQxZrHEPDmRHSabkWdYOH9Wxuf/K7dnjx49ekkjt3HjRpw4cYLT09Pd5TmMV7RxH0ks09RIs6m/fPTUpk2/H/rEai8hLTk4dNAkUnMj6ieOHePuXbsk56Ba5NJ7ymBixS7gi25sXevmiunCwwyLAqACInNEkkAwAYxnGXtLwmSZM4nCcNjRqBEawuYTc94zPlOUYdczuMrwCsp/UOy/4CQviB3Xwl74sH2ECYpASXSzYvjNodUvKpaoqmDMaP5UEr1OH70sm8zIcjjJODJYUy2NZKfVzVA4RWzshIolkFiDUrUEGSGygyNXPzhr1gnbs4RACcTWoFarALLyt44sRPQCoQAnLEGJUJWMrbBWK9EaIYgVtn4KAmx3MxbOU+RybFzhBFUGoN5H9VikUi0PGhdVC0vA6bKf4RSm1ckkz4vI2GjQJFMjQoRUmQixGlHjUm2+UqklMJZKCuygXERUObt9mZFxrsiNkXatnHhAhhnJeptY67U0ctk5llJudnbG3nvTtg11U0inC6AK1Cox0SuklcX+mjtfOLkcOy8feL/G8ro1p+dbTCIrAJA7z2TtGsHp3882H9/XReAqRnahgV/qESs4xRAu0b8P//5kCFkgEAgEAoFAIBAIBAKBwL+OPwGnRqv/qNwy6QAAAABJRU5ErkJggg==" alt="CorreIA">
+          </div>
+          <div class="info-item-text">Travaux sur la Y4 dans le sens Nouveau CHU Riviéra · circulation perturbée.</div>
+          <button class="info-btn">Détails <span class="material-symbols-outlined" style="font-size:11px">arrow_forward</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHIPS · 3 suggestions · loi posée -->
+  <div class="chips" id="chipsAnchor" >
+    <button class="chip" onclick="sendChip(this,'Quels restaurants sont proches ?')">Restaurants</button>
+    <button class="chip" onclick="sendChip(this,'Où sont les pharmacies à proximité ?')">Pharmacies</button>
+    <button class="chip" onclick="sendChip(this,'Y a-t-il des supermarchés proches ?')">Supermarchés</button>
+  </div>
+
+  <!-- MAP CONTROLS · 5 boutons · référence design Image 1 -->
+  <div class="map-controls">
+    <!-- 1 · Masquer / afficher la carte -->
+    <button class="map-btn" id="mapHideBtn" aria-label="Masquer/Afficher la conversation" title="Masquer la conversation">
+      <span class="material-symbols-outlined" id="mapHideIcon">visibility</span>
+    </button>
+    <!-- 2 · GPS · activer la présence -->
+    <button class="map-btn" id="gpsBtn" aria-label="Activer le GPS" title="Activer ma présence GPS">
+      <span class="material-symbols-outlined">my_location</span>
+    </button>
+    <!-- 3 · Zoom in -->
+    <button class="map-btn" id="zoomInBtn" aria-label="Zoom avant" title="Zoom avant">
+      <span class="material-symbols-outlined">add</span>
+    </button>
+    <!-- 4 · Zoom out -->
+    <button class="map-btn" id="zoomOutBtn" aria-label="Zoom arrière" title="Zoom arrière">
+      <span class="material-symbols-outlined">remove</span>
+    </button>
+    <!-- 5 · Navigation / envoyer · orange -->
+    <button class="map-btn orange" id="navBtn" aria-label="Navigation" title="Navigation">
+      <span class="material-symbols-outlined">navigation</span>
+    </button>
+  </div>
+
+  <!-- CONVERSATION -->
+  <div id="loaderMsg" style="display:none;text-align:center;padding:10px 16px;color:#6B7280;font-size:13px;font-family:'Hanken Grotesk',sans-serif;">Chargement du territoire…</div>
+  <div class="conv-area" id="convArea">
+    <!-- Message 1 · Accueil territorial -->
+    <div class="welcome-msg" id="welcomeMsg1">
+      <div class="msg-ai-avatar"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADsAAABICAYAAABIk43cAAAFO0lEQVR42u2Zy4scVRTGv3NvVfUzJtFoIPGRYGIgk+WsIpoIgggScDG4UhBRd4IP3LiobhBUXPgHaDYBRUcI6k5RSFwoakADiQqK+CD4yIRk0s+quvd8LronDzOjM+lOptX7g0s1Tdep+51z76lzbgOBQCAQCAQCgUAgEAgEApOCjMvQzOys3Xl8hkADANBoNLjiyQgACP9PATB79qTRzMysncjIprOzSev0ddOlKD6zvmoydUVmSlWXZ32pAkB18fu63cE1KZW55ZpaPnPPVDsSyf15ywZsEDKeaI8kNk1T02w29bkDh7d+9e2vP+TOwwCOoAPgRWSRpSpQKlrtPrxysHQpFIPCGjMfx/aXarn8+eZrawdfe+a+TwgApIxDcDTKzV9PTQkAnJprb8082O/nFGMiEVnSLkG0O30Ubij0Ik+Y9ZJxy3y/f8fJ+d7Tdz/7+lsP7b31sQdFWuMQPJLYP45fLwDQ7mU7xMZibeYGq4WXSBQIdCjUOYUxi/3ME97TuYwFKA7rHtj/wTc38MiRe6TR8OeMXW4yGMdeyAq/U0mQlOHW+MsQUVDanb44ryIiAi72OxgAVkQiI8a63pm87ZO77n/3u4fRbOqeNLWrFtnDzUMKALnzO9QLRBbPAQTR6mRwnhCRZcdGxNg86+vcGTxO8lUReKCJ1YisAE0laQuvW9U7gJdmJAJodzI4pwNPcEVPMOpyo5Splw5+thkQpmlqrrrYNE0FAJ5/8+NNeeG3eO+gJFSpSnqC3lP92XbXZ4XzEHpy0eFIOICXuIFKSSLR2pp66cefTt12YVK8ysu4AaCJdiffUKmU2+hna42NDMSC5yLah02qiEqydGoRwCvgsi4ECmCwF5REEkeoVhIVsSbzxS0XJsWrKrbZFAWAFx+5++iBD7/Z9u3Pcxvb/e4657SeeY19VpQ7cdlY+7floahnud0vpuYQPdrPdT3oqaQksUW9WgJJKInfTnVLq/qeHRYJCuDUcFw2j73y3jtffj93uNvzthxbqVfLF+37XpZz1cUOChxKowH5euptOf8OPr7s5db+dZO8+uS+T29/Yv8XLFd218rwIMZeG49FrAwqm8v2/J40jQjKuvobxzua7PZZl4LxY8ZliIQsNf757r0AhPVq5aQxZrHEPDmRHSabkWdYOH9Wxuf/K7dnjx49ekkjt3HjRpw4cYLT09Pd5TmMV7RxH0ks09RIs6m/fPTUpk2/H/rEai8hLTk4dNAkUnMj6ieOHePuXbsk56Ba5NJ7ymBixS7gi25sXevmiunCwwyLAqACInNEkkAwAYxnGXtLwmSZM4nCcNjRqBEawuYTc94zPlOUYdczuMrwCsp/UOy/4CQviB3Xwl74sH2ECYpASXSzYvjNodUvKpaoqmDMaP5UEr1OH70sm8zIcjjJODJYUy2NZKfVzVA4RWzshIolkFiDUrUEGSGygyNXPzhr1gnbs4RACcTWoFarALLyt44sRPQCoQAnLEGJUJWMrbBWK9EaIYgVtn4KAmx3MxbOU+RybFzhBFUGoN5H9VikUi0PGhdVC0vA6bKf4RSm1ckkz4vI2GjQJFMjQoRUmQixGlHjUm2+UqklMJZKCuygXERUObt9mZFxrsiNkXatnHhAhhnJeptY67U0ctk5llJudnbG3nvTtg11U0inC6AK1Cox0SuklcX+mjtfOLkcOy8feL/G8ro1p+dbTCIrAJA7z2TtGsHp3882H9/XReAqRnahgV/qESs4xRAu0b8P//5kCFkgEAgEAoFAIBAIBAKBwL+OPwGnRqv/qNwy6QAAAABJRU5ErkJggg==" alt="Or haBayit"></div>
+      <div class="msg-ai">
+        Bienvenue 🎉🎊<br><br>
+        Je suis Martin™ 😊, Scribe du Lieu, l'Agent Conversationnel du Territoire. Je vous accompagne et vous guide dans ce premier Territoire Conversationnel ouvert à Abidjan.<br><br>
+        Pour commencer, laissez votre territoire vous reconnaître.
+        <br><br>
+        <button class="msg-detail-btn" id="btnActiverPresence" onclick="activerPresence()">
+          <span style="font-size:15px">⌾</span> Activer ma présence
+        </button>
+        <br><br>
+        <small style="color:#9CA3AF;font-size:10px">Votre position permet d'identifier votre Lieu, son ICL™ - Identité Computationnelle du Lieu - et les informations territoriales disponibles autour de vous.</small>
+        <br><small style="color:#9CA3AF;font-size:10px">Martin · Scribe du Lieu · api.omhai.eu</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM -->
+  <div class="bottom">
+    <div class="input-row glass">
+      <button class="mic-btn" aria-label="Microphone">
+        <span class="material-symbols-outlined">mic</span>
+      </button>
+      <input id="chatInput" type="text" placeholder="Interroger le Territoire..." autocomplete="off">
+      <button class="send-btn" id="sendBtn" aria-label="Envoyer">
+        <span class="material-symbols-outlined">send</span>
+      </button>
+    </div>
+    <nav class="bottom-nav">
+      <button class="nav-btn active" aria-label="Territoire">
+        <span class="material-symbols-outlined">explore</span>
+      </button>
+      <button class="nav-btn" aria-label="Messages" style="position:relative">
+        <span class="material-symbols-outlined">chat</span>
+        <span class="nav-badge">4</span>
+      </button>
+      <button class="nav-btn" aria-label="Mon Territoire">
+        <span class="material-symbols-outlined">location_on</span>
+      </button>
+      <button class="nav-btn" aria-label="Paramètres">
+        <span class="material-symbols-outlined">settings</span>
+      </button>
+    </nav>
+
+  </div>
+
+</div>
+
+<!-- MODAL CLÉ API -->
+<div class="modal-overlay" id="keyModal">
+  <div class="modal-box">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2C10 2 11.5 7.5 15.5 8.5C11.5 9.5 10 15 10 15C10 15 8.5 9.5 4.5 8.5C8.5 7.5 10 2 10 2Z" fill="#2e659a" opacity=".85"/></svg>
+      <div class="modal-title">Connexion au Passage Territorial™</div>
+    </div>
+    <div class="modal-sub">Collez votre clé API Anthropic. Elle sera conservée dans cette session uniquement.</div>
+    <input class="modal-input" id="keyInput" type="password" placeholder="sk-ant-..." autocomplete="off">
+    <div class="modal-err" id="keyErr"></div>
+    <div class="modal-actions">
+      <button class="modal-save" id="keySave">Activer le Canal</button>
+      <button class="modal-cancel" id="keyCancel">Annuler</button>
+    </div>
+    <div class="modal-footer">Session uniquement · Jamais transmise à un tiers</div>
+  </div>
+</div>
+
+<!-- KEY TRIGGER BUTTON -->
+<button class="key-trigger" id="keyTrigger" title="Configurer la clé API">⚿</button>
+
+<!-- LEAFLET -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+<script>
+(function() {
+  'use strict';
+
+  // ── STATE ──────────────────────────────────────────────────
+  var _apiKey = window._canalApiKey || '';
+  var _territoireActif = null;
+  var _chatHistory = [];
+  var _gpsWatchId = null;
+  var _gpsFirstResolved = false;
+  var _gpsResolving = false;
+  var _lastGpsLat = null;
+  var _lastGpsLon = null;
+
+  // ── ÉTAT TERRITORIAL v2f ───────────────────────────────────
+  var _adressesData = null;   // 6025 points PADA · GET /v1/territoire
+  var _voirieData = null;     // 386 voies · GET /v1/voiries
+  // FL-130 · deux états distincts
+  // _territoireActif  : confirmé · GPS live ou clic carte · déclenche les 3 blocs Or haBayit
+  // _territoireCached : restauré · sessionStorage · carte seulement · jamais transmis à Or haBayit
+  var _territoireCached = null;
+
+  // ── LEAFLET MAP ────────────────────────────────────────────
+  var map = L.map('leaflet-map', {
+    center: [5.3600, -3.9800],
+    zoom: 14,
+    zoomControl: false,
+    attributionControl: false
+  });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19
+  }).addTo(map);
+
+  // Centrage initial sur la position de l'utilisateur
+  // Si hors Cocody (territoire non indexé) · la carte reste sur Cocody
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function(pos) {
+      var lat = pos.coords.latitude, lon = pos.coords.longitude;
+      var dansCocody = (lat >= 5.30 && lat <= 5.42 && lon >= -4.02 && lon <= -3.88);
+      if (dansCocody) {
+        map.flyTo([lat, lon], 16, { animate: true, duration: 1.5 });
+      }
+      // Hors Cocody : on reste sur la vue initiale du territoire
+    }, function() {}, { enableHighAccuracy: false, timeout: 5000 });
+  }
+
+  var _gpsMarker = null;
+  var _clickMarker = null;
+
+  // Clic carte → résolution ICL
+  map.on('click', function(e) {
+    if (e.originalEvent && e.originalEvent.target) {
+      var t = e.originalEvent.target;
+      if (t.closest && (t.closest('.leaflet-marker-icon') || t.closest('.leaflet-popup'))) return;
+    }
+    resolvePoint(e.latlng.lat, e.latlng.lng, false);
+  });
+
+  // Contrôles carte
+  var _convVisible = true;
+  document.getElementById('mapHideBtn').addEventListener('click', function() {
+    _convVisible = !_convVisible;
+    var conv = document.getElementById('convArea');
+    conv.style.visibility = _convVisible ? 'visible' : 'hidden';
+    conv.style.pointerEvents = _convVisible ? '' : 'none';
+    document.getElementById('mapHideIcon').textContent = _convVisible ? 'visibility' : 'visibility_off';
+  });
+
+  document.getElementById('zoomInBtn').addEventListener('click', function() {
+    map.zoomIn();
+  });
+
+  document.getElementById('zoomOutBtn').addEventListener('click', function() {
+    map.zoomOut();
+  });
+
+  // ── API OMHAI ──────────────────────────────────────────────
+  var API = 'https://api.omhai.eu';
+
+  function resolvePoint(lat, lon, fromGps) {
+    fetch(API + '/v1/territorial-context', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({latitude: lat, longitude: lon})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var icl        = (data.icl && data.icl.identifiant) ? data.icl.identifiant : 'non résolu';
+      var mishkan    = (data.icl && data.icl.mishkan_index) ? data.icl.mishkan_index : null;
+      var shemMakom  = data.shem_makom  || null;
+      var shemShaar  = data.shem_shaar  || null;
+      var shemMishkan= data.shem_mishkan|| null;
+      var graine     = (data.icl && data.icl.graine) ? data.icl.graine : null;
+
+      var adresseProche = plusProcheAdresse(lat, lon);
+      var voirieProche  = plusProcheVoirie(lat, lon);
+
+      _territoireActif = {
+        lat: lat, lon: lon, icl: icl,
+        mishkan: mishkan,
+        shemMakom: shemMakom,
+        shemShaar: shemShaar,
+        shemMishkan: shemMishkan,
+        graine: graine,
+        rue:          adresseProche ? adresseProche.st_name : null,
+        numero:       adresseProche ? adresseProche.numero  : null,
+        voirieProche: voirieProche  ? voirieProche.st_name  : null,
+        distVoirie:   voirieProche  ? voirieProche.distKm   : null
+      };
+      persistTerritoire();
+
+      // ICL badge supprimé · variables conservées pour le contexte Or haBayit
+      var shemFr = shemMakom ? (shemMakom.fr || '') : '';
+      var mishFr = mishkan ? (mishkan.fr || '') : '';
+
+      // Marker sur la carte
+      if (fromGps) {
+        if (_gpsMarker) map.removeLayer(_gpsMarker);
+        // Marker GPS avec halo pulsant
+        var gpsIcon = L.divIcon({
+          className: '',
+          html: '<div style="width:18px;height:18px;border-radius:50%;background:#f5a623;border:2.5px solid #fff;box-shadow:0 0 0 6px rgba(245,166,35,.25);animation:ping 2s ease-in-out infinite"></div>',
+          iconSize: [18, 18],
+          iconAnchor: [9, 9]
+        });
+        _gpsMarker = L.marker([lat, lon], { icon: gpsIcon }).addTo(map);
+        // Centrage fluide sur la position réelle
+        var dansCocody = (lat >= 5.30 && lat <= 5.42 && lon >= -4.02 && lon <= -3.88);
+        map.flyTo([lat, lon], dansCocody ? 17 : 14, { animate: true, duration: 1.2 });
+      } else {
+        if (_clickMarker) map.removeLayer(_clickMarker);
+        map.flyTo([lat, lon], Math.max(map.getZoom(), 16), { animate: true, duration: .8 });
+        var mishkanShem = mishkan ? (mishkan.shem || '') : '';
+        var mishkanFr   = mishkan ? (mishkan.fr   || '') : '';
+        var shemMakomFr = shemMakom ? (shemMakom.fr || '') : '';
+        var shemShaarFr = shemShaar ? (shemShaar.fr || '') : '';
+        var popupHtml = '<b style="font-family:monospace;color:#B05C1A">' + icl + '</b>';
+        if (mishkanShem) popupHtml += '<br><span style="font-size:11px;font-weight:600">' + mishkanShem + '</span>';
+        if (mishkanFr)   popupHtml += '<br><span style="font-size:10px;color:#8A6340;font-style:italic">' + mishkanFr + '</span>';
+        if (shemMakomFr) popupHtml += '<br><span style="font-size:10px;color:#534AB7">' + shemMakomFr + '</span>';
+        if (shemShaarFr) popupHtml += ' · <span style="font-size:10px;color:#534AB7">' + shemShaarFr + '</span>';
+        _clickMarker = L.circleMarker([lat, lon], {
+          radius: 8, fillColor: '#2e659a', color: '#fff', weight: 2, fillOpacity: .85
+        }).addTo(map).bindPopup(popupHtml).openPopup();
+      }
+
+      if (fromGps && _territoireActif && _territoireActif.icl && _territoireActif.icl !== 'non résolu') {
+        fetch(API + '/v1/resolve-presence', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ icl: _territoireActif.icl })
+        }).catch(function() {});
+      }
+
+      if (fromGps && !_gpsFirstResolved) {
+        _gpsFirstResolved = true;
+        _gpsResolving = false;
+        var question = '[STRUCTURE B] Position GPS résolue. '
+          + 'ICL™ : ' + icl + '. '
+          + (shemFr ? 'Shem haMakom : ' + shemFr + '. ' : '')
+          + (mishFr ? 'Mishkan : ' + mishFr + '. ' : '')
+          + 'Applique la STRUCTURE B exactement : ouvrir par La Porte de l\'Écoute s\'ouvre. puis afficher Rue · Numéro · Voirie proche · Ville · Adresses PADA™ · ICL™ · Source. CTA : Souhaites-tu te rendre quelque part ? Pas de signature.';
+        interrogate(question);
+      } else if (fromGps) {
+        _gpsResolving = false;
+      }
+    })
+    .catch(function() {
+      _gpsResolving = false;
+      console.warn('[OmeH.ai] API indisponible · vérifiez api.omhai.eu');
+    });
+  }
+
+  // ── INIT TERRITOIRE v2f ───────────────────────────────────
+  // Chargement des 6025 adresses + 386 voies au démarrage
+  // Condition préalable : GET /v1/territoire + GET /v1/voiries validés
+
+  function showLoader(msg) {
+    var el = document.getElementById('loaderMsg');
+    if (el) { el.textContent = msg; el.style.display = 'block'; }
+  }
+  function hideLoader() {
+    var el = document.getElementById('loaderMsg');
+    if (el) { el.style.display = 'none'; }
+  }
+
+  function haversineKm(lat1, lon1, lat2, lon2) {
+    var R = 6371;
+    var dLat = (lat2 - lat1) * Math.PI / 180;
+    var dLon = (lon2 - lon1) * Math.PI / 180;
+    var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  function plusProcheAdresse(lat, lon) {
+    if (!_adressesData || !_adressesData.length) return null;
+    var best = null, bestD = Infinity;
+    for (var i = 0; i < _adressesData.length; i++) {
+      var f = _adressesData[i];
+      var coords = f.geometry.coordinates;
+      var d = haversineKm(lat, lon, coords[1], coords[0]);
+      if (d < bestD) { bestD = d; best = f; }
+    }
+    return best ? Object.assign({}, best.properties, { distKm: bestD }) : null;
+  }
+
+  function plusProcheVoirie(lat, lon) {
+    if (!_voirieData || !_voirieData.length) return null;
+    var best = null, bestD = Infinity;
+    for (var i = 0; i < _voirieData.length; i++) {
+      var f = _voirieData[i];
+      var coords = f.geometry.coordinates;
+      for (var j = 0; j < coords.length; j++) {
+        var d = haversineKm(lat, lon, coords[j][1], coords[j][0]);
+        if (d < bestD) { bestD = d; best = f; }
+      }
+    }
+    return best ? Object.assign({}, best.properties, { distKm: bestD }) : null;
+  }
+
+  function lonLatToICL(lat, lon) {
+    var latInt = Math.round(Math.abs(lat) * 10000);
+    var lonInt = Math.round(Math.abs(lon) * 10000);
+    var L = String(latInt).padStart(4, '0');
+    var O = String(lonInt).padStart(4, '0');
+    return L + ' | ' + O + ' (mode local)';
+  }
+
+  function persistTerritoire() {
+    try { sessionStorage.setItem('omh_territoire', JSON.stringify(_territoireActif)); } catch(e) {}
+  }
+
+  function restoreTerritoire() {
+    try {
+      var s = sessionStorage.getItem('omh_territoire');
+      if (s) {
+        _territoireCached = JSON.parse(s);
+        // FL-130 : cache utilisé pour la carte (centrage) uniquement
+        // _territoireActif reste null jusqu'à confirmation GPS/clic
+        // Or haBayit recevra 'Aucun lieu actif confirmé'
+        if (_territoireCached && _territoireCached.lat && _territoireCached.lon) {
+          map.setView([_territoireCached.lat, _territoireCached.lon], 15);
+        }
+      }
+    } catch(e) {}
+  }
+
+  // ── TERRITORY ACTION LAYER™ · v1.0 · 13 Août 2026 ─────────
+  // Exécute les intentions cartographiques produites par Or haBayit™
+  // Loi FL-130 : LLM → Intent JSON typée → TAL → Map · jamais de JS libre
+
+  var _highlightLayer = null;
+
+  var TAL = {
+    ALLOW: ['FLY_TO', 'ZOOM_TO', 'RESET_VIEW', 'SEARCH_PLACE', 'HIGHLIGHT_ROAD', 'HIGHLIGHT_PLACE', 'SHOW_LAYER', 'HIDE_LAYER', 'PLACE_MARKER', 'START_GPS', 'SEARCH_NUMBER', 'HIGHLIGHT_ADDRESSES_BY_VOIE'],
+
+    execute: function(intent) {
+      if (!intent || !intent.action) return { status: 'ERR', code: 'NO_ACTION' };
+      if (TAL.ALLOW.indexOf(intent.action) === -1)
+        return { status: 'ERR', code: 'ACTION_UNSUPPORTED', action: intent.action };
+
+      console.log('[TAL] Executing:', intent.action, intent);
+
+      switch (intent.action) {
+
+        case 'FLY_TO':
+          if (intent.lat === undefined || intent.lon === undefined)
+            return { status: 'ERR', code: 'MISSING_PARAMS' };
+          map.flyTo([parseFloat(intent.lat), parseFloat(intent.lon)], intent.zoom || 17);
+          return { status: 'OK', action: 'FLY_TO' };
+
+        case 'ZOOM_TO':
+          map.setZoom(intent.zoom || 16);
+          return { status: 'OK', action: 'ZOOM_TO', zoom: map.getZoom() };
+
+        case 'RESET_VIEW':
+          map.setView([5.3600, -3.9800], 14);
+          return { status: 'OK', action: 'RESET_VIEW' };
+
+        case 'SEARCH_PLACE':
+          if (!intent.query) return { status: 'ERR', code: 'MISSING_PARAMS' };
+          return TAL._searchPlace(intent.query);
+
+        case 'HIGHLIGHT_ROAD':
+          // Alias générique de SEARCH_PLACE pour les voiries
+          // Retour structuré conforme §17 Note DevOps TAL™
+          if (!intent.target && !intent.query && !intent.name)
+            return { status: 'ERR', code: 'MISSING_PARAMS' };
+          var roadQuery = intent.query || intent.name || (intent.target && intent.target.name) || '';
+          var roadResult = TAL._searchPlace(roadQuery);
+          return {
+            status:           roadResult.status === 'OK' ? 'SUCCESS' : 'ERR',
+            action:           'HIGHLIGHT_ROAD',
+            target:           { type: 'ROAD', name: roadResult.st_name || roadQuery },
+            objects_visible:  roadResult.count || 0,
+            viewport_changed: roadResult.count > 0,
+            dist_m:           roadResult.dist_m || null
+          };
+
+        case 'HIGHLIGHT_PLACE':
+          if (!intent.icl) return { status: 'ERR', code: 'MISSING_PARAMS' };
+          return TAL._highlightPlace(intent.icl);
+
+        case 'SHOW_LAYER':
+          return TAL._showLayer(intent.layer);
+
+        case 'HIDE_LAYER':
+          return TAL._hideLayer(intent.layer);
+
+        case 'SEARCH_NUMBER':
+          // Recherche d'un numéro précis dans une rue + voisins + distance
+          if (!intent.st_name || !intent.numero) return { status: 'ERR', code: 'MISSING_PARAMS' };
+          return TAL._searchNumber(intent.st_name, intent.numero);
+
+case 'HIGHLIGHT_ADDRESSES_BY_VOIE':
+          if (!intent.query) return { status: 'ERR', code: 'MISSING_PARAMS' };
+          var hvResult = TAL._searchPlace(intent.query);           hvResult.action = 'SEARCH_PLACE';           return hvResult;
+
+        case 'START_GPS':
+          if (_gpsWatchId === null) { startGps(); }
+          return { status: 'OK', action: 'START_GPS' };
+
+        case 'PLACE_MARKER':
+          var pmLat = intent.lat !== undefined ? parseFloat(intent.lat) : (_territoireActif ? _territoireActif.lat : null);
+          var pmLon = intent.lon !== undefined ? parseFloat(intent.lon) : (_territoireActif ? _territoireActif.lon : null);
+          if (!pmLat || !pmLon) return { status: 'ERR', code: 'NO_POSITION' };
+          if (_highlightLayer) { map.removeLayer(_highlightLayer); _highlightLayer = null; }
+          _highlightLayer = L.layerGroup([
+            L.circleMarker([pmLat, pmLon], {
+              radius: 8, fillColor: '#3B82F6', color: '#ffffff',
+              weight: 2, fillOpacity: 0.92, interactive: false
+            })
+          ]).addTo(map);
+          map.flyTo([pmLat, pmLon], intent.zoom || 17);
+          return { status: 'OK', action: 'PLACE_MARKER', lat: pmLat, lon: pmLon };
+
+        default:
+          return { status: 'ERR', code: 'ACTION_UNSUPPORTED' };
+      }
+    },
+
+    _searchPlace: function(query) {
+      if (!_adressesData || !_adressesData.length)
+        return { status: 'ERR', code: 'NO_DATA' };
+
+      // ── MAʿAVAR HAKtav™ · Espace Préalable de Traitement ─────────
+      // Shoresh · Pitzul · Mishkal · Gevul
+      // Précède toute distinction entre saisie habitant et corpus PADA
+
+      // ── SHORESH haKtav™ · Racine · Normalisation unifiée ──────────
+      function mkNormalize(s) {
+        return s
+          .toLowerCase()
+          .replace(/\u2019|\u2018|\u0060|\u00b4/g, "'")  // apostrophes → '
+          .replace(/\u2013|\u2014/g, ' ')                 // tirets → espace
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')                // diacritiques
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+
+      // ── PITZUL haKtav™ · Fragmentation · Tokenisation ─────────────
+      function mkTokenize(s) {
+        return s
+          .split(/[\s'\-\.]+/)
+          .filter(function(t) { return t.length >= 2; });
+      }
+
+      // ── MISHKAL haKtav™ · Poids · Levenshtein ─────────────────────
+      function mkLev(a, b) {
+        var m = a.length, n = b.length, dp = [];
+        for (var i = 0; i <= m; i++) { dp[i] = [i]; }
+        for (var j = 0; j <= n; j++) { dp[0][j] = j; }
+        for (var i = 1; i <= m; i++) {
+          for (var j = 1; j <= n; j++) {
+            dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1]
+              : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+          }
+        }
+        return dp[m][n];
+      }
+
+      // ── MISHKAL haKtav™ · Scoring 4 passes ────────────────────────
+      function mkScore(qNorm, rueName) {
+        var rNorm = mkNormalize(rueName);
+
+        // PASS 1 · contenance directe → score 0
+        if (rNorm.indexOf(qNorm) >= 0 || qNorm.indexOf(rNorm) >= 0) return 0;
+
+        var qToks = mkTokenize(qNorm);
+        var rToks = mkTokenize(rNorm);
+
+        // PASS 2 · tous les tokens significatifs (3+ chars) matchent · score 0.05
+        var qSig = qToks.filter(function(t) { return t.length >= 3; });
+        if (qSig.length > 0) {
+          var allFound = qSig.every(function(qt) {
+            return rToks.some(function(rt) {
+              var maxL = Math.max(qt.length, rt.length);
+              return maxL > 0 && mkLev(qt, rt) / maxL <= 0.35;
+            });
+          });
+          if (allFound) return 0.05;
+
+          // PASS 2b · proportion · au moins 50% des tokens sig matchent
+          var matched = qSig.filter(function(qt) {
+            return rToks.some(function(rt) {
+              var maxL = Math.max(qt.length, rt.length);
+              return maxL > 0 && mkLev(qt, rt) / maxL <= 0.35;
+            });
+          });
+          var ratio = matched.length / qSig.length;
+          if (ratio >= 0.5) return 0.1 + 0.3 * (1 - ratio);
+        }
+
+        // PASS 3 · Levenshtein token-par-token · moyenne
+        if (qToks.length > 0 && rToks.length > 0) {
+          var tokScores = qToks.map(function(qt) {
+            var best = 1;
+            rToks.forEach(function(rt) {
+              var maxL = Math.max(qt.length, rt.length);
+              if (maxL === 0) return;
+              var d = mkLev(qt, rt) / maxL;
+              if (d < best) best = d;
+            });
+            return best;
+          });
+          var avg = tokScores.reduce(function(a, b) { return a + b; }, 0) / tokScores.length;
+          if (avg <= 0.45) return 0.4 + avg;
+        }
+
+        // PASS 4 · Levenshtein global normalisé · dernier recours
+        var maxLen = Math.max(qNorm.length, rNorm.length);
+        return maxLen ? 0.8 + 0.2 * (mkLev(qNorm, rNorm) / maxLen) : 1;
+      }
+
+      // ── GEVUL haKtav™ · Frontière · Filtre + limite ───────────────
+      function mkFilter(scored) {
+        var pertinentes = scored.filter(function(s) { return s.score <= 0.5; });
+        return (pertinentes.length ? pertinentes : scored).slice(0, 3);
+      }
+
+      var q = mkNormalize(query);
+
+      // ── RECHERCHE DIRECTE · PASS 1 ────────────────────────────────
+      var results = [];
+      for (var i = 0; i < _adressesData.length; i++) {
+        var f = _adressesData[i];
+        var name = mkNormalize(f.properties.st_name || '');
+        if (name.indexOf(q) >= 0 || q.indexOf(name) >= 0) results.push(f);
+      }
+
+      // ── RECHERCHE PAR TOKENS · PASS 2 (si PASS 1 vide) ───────────
+      if (!results.length) {
+        var qToks2 = mkTokenize(q).filter(function(t) { return t.length >= 3; });
+        if (qToks2.length >= 1) {
+          for (var i = 0; i < _adressesData.length; i++) {
+            var f = _adressesData[i];
+            var name = mkNormalize(f.properties.st_name || '');
+            var rToks2 = mkTokenize(name);
+            var hits = qToks2.filter(function(qt) {
+              return rToks2.some(function(rt) {
+                var maxL = Math.max(qt.length, rt.length);
+                return maxL > 0 && mkLev(qt, rt) / maxL <= 0.35;
+              });
+            });
+            if (hits.length >= Math.max(1, Math.ceil(qToks2.length * 0.5))) results.push(f);
+          }
+        }
+      }
+
+      if (_highlightLayer) { map.removeLayer(_highlightLayer); _highlightLayer = null; }
+
+      // ── CAS B · zéro résultat → suggestions scorées ───────────
+      if (!results.length) {
+        var ruesUniques = {};
+        for (var i = 0; i < _adressesData.length; i++) {
+          var sn = _adressesData[i].properties.st_name || '';
+          if (sn) ruesUniques[sn] = true;
+        }
+        var scored = Object.keys(ruesUniques).map(function(rue) {
+          return { rue: rue, score: mkScore(q, rue) };
+        }).sort(function(a, b) { return a.score - b.score; });
+
+        var top3 = mkFilter(scored);
+
+        return {
+          status:      'OK',
+          code:        'NO_RESULT',
+          count:       0,
+          query:       query,
+          correction:  top3.length ? top3[0].rue : null,
+          suggestions: top3.map(function(s) { return s.rue; }),
+          lev_dist:    top3.length ? top3[0].score : null
+        };
+      }
+
+      // ── CAS C · plusieurs rues distinctes matchent ─────────────
+      var ruesMatchees = {};
+      results.forEach(function(f) {
+        var sn = f.properties.st_name || '';
+        if (sn) ruesMatchees[sn] = true;
+      });
+      var listeRues = Object.keys(ruesMatchees);
+      if (listeRues.length > 1) {
+        return {
+          status:    'OK',
+          code:      'MULTI_MATCH',
+          count:     results.length,
+          query:     query,
+          rues:      listeRues
+        };
+      }
+
+      // ── CAS A · une seule rue trouvée ─────────────────────────
+      var refLat = _territoireActif ? _territoireActif.lat : null;
+      var refLon = _territoireActif ? _territoireActif.lon : null;
+      if (refLat && refLon) {
+        results.sort(function(a, b) {
+          var ca = a.geometry.coordinates, cb = b.geometry.coordinates;
+          return haversineKm(refLat, refLon, ca[1], ca[0]) - haversineKm(refLat, refLon, cb[1], cb[0]);
+        });
+      }
+
+      // Afficher tous les points de la rue en couleur Présence
+      var markers = results.map(function(f) {
+        var c = f.geometry.coordinates;
+        return L.circleMarker([c[1], c[0]], {
+          radius: 7, fillColor: '#f5a623', color: '#ffffff',
+          weight: 1.5, fillOpacity: 0.88, interactive: false
+        });
+      });
+      _highlightLayer = L.layerGroup(markers).addTo(map);
+      if (_padaLayer && map.hasLayer(_padaLayer)) {
+        map.removeLayer(_padaLayer);
+      }
+      if (_padaLayer && map.hasLayer(_padaLayer)) {
+        map.removeLayer(_padaLayer);
+        _padaLayer.addTo(map);
+      }
+      var c0 = results[0].geometry.coordinates;
+      map.flyTo([c0[1], c0[0]], 17);
+
+      var numeros = results
+        .map(function(f) { return parseInt(f.properties.numero); })
+        .filter(function(n) { return !isNaN(n); })
+        .sort(function(a, b) { return a - b; });
+      var numMin = numeros.length ? numeros[0] : null;
+      var numMax = numeros.length ? numeros[numeros.length - 1] : null;
+      var stName = results[0].properties.st_name || query;
+
+      if (numeros.length > 0) {
+        var _padaContext = '[DONN\u00c9ES PADA \u00b7 ' + stName + ']\n'
+            + 'Adresses index\u00e9es : ' + results.length + '\n'
+            + 'Num\u00e9ros exacts dans l\'ordre : ' + numeros.join(', ') + '\n'
+            + 'Premier : ' + numMin + ' \u00b7 Dernier : ' + numMax + '\n'
+            + 'LOI : utilise UNIQUEMENT ces num\u00e9ros pour les voisins. Ne jamais inventer.';
+        _chatHistory.push({ role: 'user', content: _padaContext });
+        _chatHistory.push({ role: 'assistant', content: 'Donn\u00e9es PADA re\u00e7ues pour ' + stName + ' : ' + results.length + ' adresses index\u00e9es.' });
+      }
+
+      // Extraire ICL début et fin
+      var iclDebutSP = null, iclFinSP = null;
+      for (var si = 0; si < results.length; si++) {
+        if (results[si].properties.icl) { iclDebutSP = results[si].properties.icl; break; }
+      }
+      for (var se = results.length - 1; se >= 0; se--) {
+        if (results[se].properties.icl) { iclFinSP = results[se].properties.icl; break; }
+      }
+
+      return {
+        status:    'OK',
+        count:     results.length,
+        query:     query,
+        st_name:   stName,
+        num_min:   numMin,
+        num_max:   numMax,
+        dist_m:    refLat ? Math.round(haversineKm(refLat, refLon, c0[1], c0[0]) * 1000) : null,
+        icl_debut: iclDebutSP,
+        icl_fin:   iclFinSP
+      };
+    },
+
+    _highlightPlace: function(icl) {
+      if (!_adressesData || !_adressesData.length)
+        return { status: 'ERR', code: 'NO_DATA' };
+      var found = null;
+      for (var i = 0; i < _adressesData.length; i++) {
+        if (_adressesData[i].properties.icl === icl) { found = _adressesData[i]; break; }
+      }
+      if (!found) return { status: 'ERR', code: 'ICL_NOT_FOUND', icl: icl };
+      var c = found.geometry.coordinates;
+      if (_highlightLayer) { map.removeLayer(_highlightLayer); _highlightLayer = null; }
+      _highlightLayer = L.layerGroup([
+        L.circleMarker([c[1], c[0]], {
+          radius: 12, fillColor: '#F97316', color: '#ffffff',
+          weight: 2, fillOpacity: 0.92, interactive: false
+        })
+      ]).addTo(map);
+      map.flyTo([c[1], c[0]], 17);
+      return { status: 'OK', icl: icl };
+    },
+
+    _searchNumber: function(stName, numero) {
+      if (!_adressesData || !_adressesData.length) return { status: 'ERR', code: 'NO_DATA' };
+
+      function normalize(s) {
+        return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+      }
+
+      var sn = normalize(stName);
+      var num = parseInt(numero);
+
+      // Tous les points de cette rue, triés par numéro
+      var ruePoints = [];
+      for (var i = 0; i < _adressesData.length; i++) {
+        var f = _adressesData[i];
+        if (normalize(f.properties.st_name || '').indexOf(sn) >= 0) {
+          var n = parseInt(f.properties.numero);
+          if (!isNaN(n)) ruePoints.push({ f: f, n: n });
+        }
+      }
+      ruePoints.sort(function(a, b) { return a.n - b.n; });
+
+      if (!ruePoints.length) return { status: 'OK', code: 'NO_RESULT', count: 0 };
+
+      // Trouver le point le plus proche du numéro demandé
+      var best = null, bestDiff = Infinity;
+      for (var j = 0; j < ruePoints.length; j++) {
+        var diff = Math.abs(ruePoints[j].n - num);
+        if (diff < bestDiff) { bestDiff = diff; best = j; }
+      }
+
+      var target = ruePoints[best];
+      var tc = target.f.geometry.coordinates;
+
+      // Voisins : 2 avant + 2 après dans la liste triée
+      var voisins = [];
+      for (var k = Math.max(0, best - 2); k <= Math.min(ruePoints.length - 1, best + 2); k++) {
+        if (k !== best) voisins.push(ruePoints[k].n);
+      }
+
+      // Distance depuis _territoireActif
+      var distM = null;
+      if (_territoireActif && _territoireActif.lat) {
+        distM = Math.round(haversineKm(_territoireActif.lat, _territoireActif.lon, tc[1], tc[0]) * 1000);
+      }
+
+      // ── LOI 6 · OR haAdresse · ILLUMINATE_SINGLE_POINT · NO_NEIGHBORS ──
+      // CLEAR_PREVIOUS_LAYER
+      if (_highlightLayer) { map.removeLayer(_highlightLayer); _highlightLayer = null; }
+
+      // ILLUMINATE_SINGLE_POINT · un seul point · radius 11 · orange Présence
+      _highlightLayer = L.layerGroup([
+        L.circleMarker([tc[1], tc[0]], {
+          radius: 11, fillColor: '#f5a623', color: '#ffffff',
+          weight: 2.5, fillOpacity: 1, interactive: false
+        })
+      ]).addTo(map);
+      // NO_NEIGHBORS · zéro circleMarker secondaire · LOI 6 satisfaite
+      map.flyTo([tc[1], tc[0]], 18);
+
+      return {
+        status:    'OK',
+        action:    'SEARCH_NUMBER',
+        st_name:   target.f.properties.st_name,
+        numero:    target.n,
+        icl:       target.f.properties.icl,
+        dist_m:    distM,
+        exact:     (bestDiff === 0),
+        voisins:   voisins,
+        position:  best + 1,
+        total:     ruePoints.length
+      };
+    },
+
+    _showLayer: function(layer) {
+      if (layer === 'pada' && _padaLayer) {
+        if (!map.hasLayer(_padaLayer)) _padaLayer.addTo(map);
+        return { status: 'OK', action: 'SHOW_LAYER', layer: 'pada' };
+      }
+      if (layer === 'voiries' && _voirieLayer) {
+        if (!map.hasLayer(_voirieLayer)) _voirieLayer.addTo(map);
+        return { status: 'OK', action: 'SHOW_LAYER', layer: 'voiries' };
+      }
+      return { status: 'ERR', code: 'LAYER_NOT_FOUND', layer: layer };
+    },
+
+    _hideLayer: function(layer) {
+      if (layer === 'pada' && _padaLayer) {
+        if (map.hasLayer(_padaLayer)) map.removeLayer(_padaLayer);
+        return { status: 'OK', action: 'HIDE_LAYER', layer: 'pada' };
+      }
+      if (layer === 'voiries' && _voirieLayer) {
+        if (map.hasLayer(_voirieLayer)) map.removeLayer(_voirieLayer);
+        return { status: 'OK', action: 'HIDE_LAYER', layer: 'voiries' };
+      }
+      return { status: 'ERR', code: 'LAYER_NOT_FOUND', layer: layer };
+    }
+  };
+
+  // ── RENDER PADA · Affichage des 6025 adresses sur la carte ──
+  // Points minimalistes 3px · couleur neutre #94a3b8 · pas de popup
+  // Chargés une fois après initTerritoire() · layer dédié
+
+  var _padaLayer  = null;   // 6025 points PADA · GET /v1/territoire
+  var _voirieLayer = null;   // 386 voies · réservé SHOW/HIDE layer
+
+  function renderPADA() {
+    if (!_adressesData || !_adressesData.length) return;
+    if (_padaLayer) { map.removeLayer(_padaLayer); }
+
+    var markers = [];
+    for (var i = 0; i < _adressesData.length; i++) {
+      var f = _adressesData[i];
+      var coords = f.geometry.coordinates; // [lon, lat]
+      var props  = f.properties;
+      var circle = L.circleMarker([coords[1], coords[0]], {
+        radius:      5,
+        fillColor:   '#94a3b8',
+        color:       '#ffffff',
+        weight:      1,
+        fillOpacity: 0.72,
+        interactive: true
+      });
+      // ── Popup survol (desktop) · léger ─────────────────────
+      var hoverPopup = '<b style="font-family:monospace;color:#b45309;font-size:13px">'
+        + (props.icl || '') + '</b>'
+        + (props.st_name ? '<br><span style="font-size:12px;color:#374151">' + props.st_name
+          + (props.numero ? ' · <b>' + props.numero + '</b>' : '') + '</span>' : '');
+
+      // ── Popup clic (desktop + mobile) · enrichi ──────────────
+      // Cherche la voirie correspondante dans _voirieData
+      (function(c, p, hp) {
+        // Popup survol : ouverture au hover, fermeture à la sortie
+        c.on('mouseover', function(e) {
+          e.target.setStyle({ fillColor: '#f5a623', color: '#ffffff', weight: 2, radius: 7, fillOpacity: 0.9 });
+          if (!e.target._selected) {
+            e.target.bindPopup(hp, { maxWidth: 220, className: 'pada-popup', closeButton: false, autoPan: false }).openPopup();
+          }
+        });
+        c.on('mouseout', function(e) {
+          if (!e.target._selected) {
+            e.target.setStyle({ fillColor: '#94a3b8', color: '#ffffff', weight: 1, radius: 5, fillOpacity: 0.72 });
+            e.target.closePopup();
+          }
+        });
+
+        // Popup clic · enrichi avec données voirie
+        c.on('click', function(e) {
+          if (window._padaSelected && window._padaSelected !== e.target) {
+            window._padaSelected._selected = false;
+            window._padaSelected.setStyle({ fillColor: '#94a3b8', color: '#ffffff', weight: 1, radius: 5, fillOpacity: 0.72 });
+            window._padaSelected.closePopup();
+          }
+          e.target._selected = true;
+          e.target.setStyle({ fillColor: '#f5a623', color: '#ffffff', weight: 2.5, radius: 8, fillOpacity: 1 });
+          window._padaSelected = e.target;
+
+          // Chercher voirie correspondante
+          var voirie = null;
+          if (_voirieData) {
+            for (var v = 0; v < _voirieData.length; v++) {
+              if (_voirieData[v].properties.st_name === p.st_name) {
+                voirie = _voirieData[v].properties;
+                break;
+              }
+            }
+          }
+
+          var clickPopup = '<b style="font-family:monospace;color:#b45309;font-size:13px">' + (p.icl || '') + '</b>'
+            + (p.st_name ? '<br><span style="font-size:12px;color:#374151;font-weight:600">' + p.st_name
+              + (p.numero ? ' · N°' + p.numero : '') + '</span>' : '');
+
+          if (voirie) {
+            if (voirie.longueur_m) {
+              clickPopup += '<br><span style="font-size:11px;color:#6B7280">'
+                + '⇔ ' + Math.round(voirie.longueur_m) + ' m</span>';
+            }
+            if (voirie.icl_debut) {
+              clickPopup += '<br><span style="font-size:10px;color:#9CA3AF">'
+                + 'Début : <b>' + voirie.icl_debut + '</b></span>';
+            }
+            if (voirie.icl_fin) {
+              clickPopup += '<br><span style="font-size:10px;color:#9CA3AF">'
+                + 'Fin : <b>' + voirie.icl_fin + '</b></span>';
+            }
+            if (voirie.convergence) {
+              clickPopup += '<br><span style="font-size:10px;color:#b45309;font-style:italic">'
+                + voirie.convergence + '</span>';
+            }
+          }
+
+          e.target.bindPopup(clickPopup, { maxWidth: 260, className: 'pada-popup', closeButton: true, autoPan: true }).openPopup();
+        });
+      })(circle, props, hoverPopup);
+
+      markers.push(circle);
+    }
+
+    _padaLayer = L.layerGroup(markers).addTo(map);
+    console.log('[OmeH.ai v2f] PADA ' + markers.length + ' points rendus');
+  }
+
+  function initTerritoire() {
+    showLoader('Chargement du territoire…');
+    Promise.all([
+      fetch(API + '/v1/territoire').then(function(r) { return r.json(); }),
+      fetch(API + '/v1/voiries').then(function(r) { return r.json(); })
+    ]).then(function(results) {
+      _adressesData = (results[0] && results[0].features) ? results[0].features : [];
+      _voirieData   = (results[1] && results[1].features) ? results[1].features : [];
+      hideLoader();
+      restoreTerritoire();
+      renderPADA();
+      console.log('[OmeH.ai v2f] Territoire chargé · ' + _adressesData.length + ' adresses · ' + _voirieData.length + ' voiries');
+    }).catch(function(e) {
+      hideLoader();
+      console.warn('[OmeH.ai v2f] initTerritoire() indisponible · mode local · ' + e.message);
+    });
+  }
+
+  // ── GPS ────────────────────────────────────────────────────
+  var gpsBtn = document.getElementById('gpsBtn');
+
+  function startGps() {
+    if (!navigator.geolocation) { alert('Géolocalisation non disponible.'); return; }
+    _gpsFirstResolved = false;
+    _gpsWatchId = navigator.geolocation.watchPosition(function(pos) {
+      var lat = pos.coords.latitude, lon = pos.coords.longitude;
+      if (_lastGpsLat !== null) {
+        if (Math.abs(lat - _lastGpsLat) < 0.00005 && Math.abs(lon - _lastGpsLon) < 0.00005) return;
+      }
+      _lastGpsLat = lat; _lastGpsLon = lon;
+      _gpsResolving = true;
+      gpsBtn.classList.add('active');
+      resolvePoint(lat, lon, true);
+    }, function() {
+      gpsBtn.classList.remove('active');
+      _gpsWatchId = null;
+    }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 });
+  }
+
+  function stopGps() {
+    if (_gpsWatchId !== null) {
+      navigator.geolocation.clearWatch(_gpsWatchId);
+      _gpsWatchId = null;
+    }
+    gpsBtn.classList.remove('active');
+  }
+
+  gpsBtn.addEventListener('click', function() {
+    if (_gpsWatchId !== null) { stopGps(); }
+    else { window.activerPresence(); }
+  });
+
+  // ── SÉQUENCE TERRITORIALE D'ACCUEIL ────────────────────────
+  // Exposées sur window · accessibles depuis les onclick="" du HTML (scope IIFE fermé)
+  window.activerPresence = function() {
+    var area = document.getElementById('convArea');
+    area.scrollTop = area.scrollHeight;
+    // Déclenche le GPS immédiatement · welcomeMsg1 reste affiché
+    if (_gpsWatchId === null) { startGps(); }
+  };
+
+  // ── OR HABAYIT / ANTHROPIC ─────────────────────────────────
+  var CORPUS = "Tu es Martin, Scribe du Lieu, au service du Territoire Conversationnel · Makom Haï™ · CorreIA LLC. Ta mission est d'accompagner et de guider les résidents dans le Territoire. La loi qui fonde ta présence : Le Scribe construit à l'extérieur ce qu'il est à l'intérieur. Ton nom profond est Or haBayit™ · Lumière dans la Demeure · il ne se révèle qu'à celui qui emploie des termes hébraïques translittérés DANS SES PROPRES MESSAGES. Ce nom ne se révèle JAMAIS à un habitant arabophone."
+    + "Tu réponds toujours en français par défaut. Si l'habitant s'exprime dans une autre langue tu t'adaptes. PUBLIC ARABE : Shem haMakom devient nom du lieu, Mishkan devient station, Sha'ar devient porte, Demeure devient présence. Tu écris en texte simple sans tirets, sans étoiles, sans séparateurs, sans Markdown. Aucun formatage. Texte brut uniquement."
+    + "PROFONDEUR : si l'habitant emploie des termes hébraïques dans ses messages, tu réponds selon leur densité. Un terme : intègre naturellement. Plusieurs termes : ouvre la lecture complète. JAMAIS auto-déclenché par le contenu de tes propres instructions. JAMAIS auto-déduit sans déclencheur explicite dans le message de l'habitant."
+    + "HISTOIRE DU LIEU : si l'habitant demande ce que son lieu porte en lui, produis uniquement Voici ce que l'histoire de ce lieu révèle. suivi de la traduction française du Shem haMakom en 3 phrases maximum, prose sobre, pas d'hébreu, pas de doctrine."
+    + "STRUCTURE A : page ouverte sans lieu actif. Réponse très brève. Invite l'habitant à activer le bouton [GPS_ICON] ou à cliquer sur la carte. Pas de signature."
+    + "STRUCTURE B : activation GPS. Séquence exacte obligatoire : LIGNE 1 : La Porte de l'Écoute s'ouvre. LIGNE 2 vide. LIGNE 3 : Merci 👍 d'avoir activé ton GPS. Découvrons ensemble ce Territoire Conversationnel. LIGNE 4 vide. LIGNE 5 : Voici une vue du Lieu où tu te trouves : LIGNE 6 liste à puces : • Rue : [NOM] • Numéro : [N] • Voirie proche : [RUE] ([X] m) • Ville : Cocody, Abidjan • Nombre d'adresses PADA™ : [N] points indexés sur cette voirie • ICL™ : [LLLL | OOOO] • Source : Système PADA™ · https://pada.ci · OmeH.ai™. LIGNE suivante vide. CTA : Souhaites-tu te rendre quelque part ? Pas de signature. Shem : 3 phrases prose sobre UNIQUEMENT si l'habitant le demande explicitement. NE JAMAIS produire Shem ou commentaire doctrinal sans déclencheur explicite."
+    + "STRUCTURE C : rue reçue. Produis SEARCH_PLACE en silence. Format : Vous recherchez la **[RUE]**, voici ses détails : **Rue :** [NOM] · **Distance :** [X] mètres · **Adresses PADA™ :** [N] points indexés · **ICL Début :** [ICL] · **ICL Fin :** [ICL] · **Source :** Système PADA™ · https://pada.ci · OmeH.ai™. Invitation [EYE_ICON]. CTA : Cherches-tu un numéro précis ? Pas de signature. LOI : si une donnée est absente omets la ligne. LOI ABSOLUE ANTI-VERBALISATION : JAMAIS de commentaire sur le choix de l'habitant, JAMAIS de mention du numéro de liste, JAMAIS d'explication du système. Affiche uniquement les données."
+    + "STRUCTURE D : numéro reçu · SCÉNARIO 1 adresse complète N°+Rue. Produis SEARCH_NUMBER en silence. Utilise EXCLUSIVEMENT les données du bloc DONNEES PADA injecté. Format obligatoire : LIGNE 1 : Vous recherchez le [N°] [RUE], voici les détails : · LIGNE VIDE · LIGNE 2 : Ce Lieu se trouve à **[X] m** de ta position actuelle. Son identité computationnelle est **[ICL]**[SI SHEM DISPONIBLE : , inscrit dans le sous-Territoire ICL : **[SHEM FR]**]. · LIGNE VIDE · LIGNE 3 POSITION · trois cas exclusifs : si position=1 → C'est la **1ère** adresse indexée dans cette rue. · si position=total → C'est la **dernière** adresse indexée dans cette rue. · sinon → C'est la **[position]ème** adresse sur **[total]** indexées dans cette rue. · LIGNE VIDE · LIGNE 4 INVITATION : Je viens d'allumer ce point sur la carte. Masque les bulles avec [EYE_ICON] pour le voir. · LIGNE VIDE · CTA : Souhaites-tu t'y rendre ? · Pas de signature. LOI : NE JAMAIS afficher voisins. NE JAMAIS inventer données. Si distance indisponible : omettre la ligne distance. Si Shem indisponible : omettre la partie sous-Territoire."
+    + "STRUCTURE D SCÉNARIO 2 CAS B · rue non trouvée · suggestions proches. Format : Je n'ai pas trouvé [SAISIE] dans le Système PADA™. Voici les rues les plus proches de votre saisie, laquelle cherchez-vous ? puis liste numérotée des suggestions avec chaque nom de rue en gras : 1. **[RUE1]** · 2. **[RUE2]** · etc. Pas de numéro d'adresse dans cette réponse. Pas de signature. LOI : après que l'habitant a choisi une rue · le système relancera automatiquement la recherche."
+    + "STRUCTURE D SCÉNARIO 2 CAS B CONFIRMATION · rue confirmée par l'habitant. Affiche les détails de la rue selon ce format exact : Vous recherchez la **[RUE]**, voici ses détails : LIGNE VIDE puis liste : **Rue :** [NOM] · **Distance :** [X] mètres · **Adresses PADA™ :** [N] points indexés · **ICL Début :** [ICL] · **ICL Fin :** [ICL] · **Source :** Système PADA™ · https://pada.ci · OmeH.ai™. LIGNE VIDE. Invitation : [EYE_ICON] Masque les bulles pour voir les points allumés sur la carte. LIGNE VIDE. CTA : Cherches-tu un numéro précis ? Pas de signature. LOI : si une donnée est absente omets la ligne."
+    + "STRUCTURE D SCÉNARIO 2 CAS C · plusieurs rues trouvées. Format : J'ai trouvé plusieurs rues correspondantes. Laquelle cherches-tu ? puis liste numérotée : 1. [RUE1] · 2. [RUE2] · etc. Pas de signature."
+    + "STRUCTURE E : conversation libre. Réponse contextuelle adaptée. Clôture : La Porte de l'Écoute se referme. Je reste disponible... Signature si réponse complète."
+    + "STRUCTURE F : hors-périmètre. Si la demande concerne une ville hors Cocody/Abidjan, une thématique non couverte, ou si SEARCH_PLACE retourne 0 résultats. ÉTAPE 1 : émettre UNE des formes d'entrée suivantes (choisir selon le contexte conversationnel) : Un instant... OU Un instant s'il te plaît... OU Accorde-moi quelques secondes... ÉTAPE 2 : attendre 1 cycle de 7 secondes (géré par le frontend). ÉTAPE 3 : émettre le retour canonique : Je suis de retour. Après vérification, nous n'avons pas encore de données sur [ville/thématique] dans le Système PADA™. Nos équipes n'ont pas encore traité cette [ville/thématique]. Ce besoin est enregistré pour nos services R&D, il guidera nos prochaines extensions territoriales. Tu souhaites être informé de l'ouverture de [ville/thématique] ? Laisse-nous ton contact et nous revenons vers toi. Signature obligatoire. LOI : NE JAMAIS dire je ne sais pas ou ce n'est pas dans mon corpus. TOUJOURS enregistrer le besoin. Substituer [ville/thématique] par la ville ou thématique identifiée dans le message."
+    // LOI 6 · voisins supprimés de _searchNumber · LOI VOISINS retirée du CORPUS
+    + "LOI ABSOLUE SEARCH_PLACE : pour toute mention d'un nom de rue ou fragment produis TOUJOURS <TAL>{action:SEARCH_PLACE,query:fragment}</TAL>. Tu ne décides JAMAIS seul qu'une rue n'existe pas. Si 0 résultats : la rue semble ne pas être indexée dans PADA."
+    + "LOI SYNTAXE ADRESSE : la syntaxe de saisie d'une adresse est N° + Nom de rue · exemple : 99 Rue l\'Eclosion. Quand l\'habitant saisit une adresse dans cette syntaxe : ÉTAPE 1 · extraire le nom de rue · lancer SEARCH_PLACE sur le nom de rue · afficher Structure C. ÉTAPE 2 · dans la rue trouvée · lancer SEARCH_NUMBER avec le nom de rue exact + le numéro · afficher Structure D. LOI : le nom d\'une rue est unique dans le système PADA™. Un numéro peut appartenir à plusieurs rues · la rue doit toujours être identifiée avant le numéro."
+    + "LOI NUMERO : sans rue la recherche est biaisée. Si une rue vient d\'etre allumée dans cette session utilise-la sans demander. Si aucune rue active demande la rue d\'abord."
+    + "SIGNATURE : une seule ligne avec losanges : Martin ◆ Scribe du Lieu ◆ Territoire Conversationnel ◆ Makom Haï™ ◆ CorreIA LLC. Si Or haBayit™ révélé : Or haBayit™ ◆ Lumière dans la Demeure ◆ Territoire Conversationnel ◆ Makom Haï™ ◆ CorreIA LLC. Toujours sur une seule ligne. Jamais sur plusieurs lignes."
+    + "TERRITORY ACTION LAYER : si la demande implique une action cartographique produis <TAL>{action JSON}</TAL> en fin de réponse. Actions : FLY_TO {lat,lon,zoom} ZOOM_TO {zoom} RESET_VIEW SEARCH_PLACE {query} HIGHLIGHT_ROAD {query} HIGHLIGHT_PLACE {icl} SHOW_LAYER {layer} HIDE_LAYER {layer} PLACE_MARKER {lat,lon} START_GPS SEARCH_NUMBER {st_name,numero} HIGHLIGHT_ADDRESSES_BY_VOIE {query}. Si l'habitant demande le GPS : <TAL>{action:START_GPS}</TAL>. Le bloc TAL ne s'affiche jamais dans la réponse visible.";
+
+  function getContexte() {
+    if (!_territoireActif) return 'Aucun lieu actif confirmé. Position non résolue via GPS ou clic carte. Invite l\'habitant à activer son GPS ou à cliquer sur un point de la carte.';
+    var t = _territoireActif;
+    var ctx = '[LIEU ACTIF]\n';
+    ctx += 'ICL™ canonique PCNT v3.1 : ' + (t.icl || 'non résolu') + '\n';
+    if (t.rue)          ctx += '[DONNÉES PADA] Rue : ' + t.rue + (t.numero ? ' N°' + t.numero : '') + '\n';
+    if (t.voirieProche) {
+      var countVoirie = _adressesData ? _adressesData.filter(function(f) {
+        return (f.properties.st_name || '').toLowerCase() === (t.voirieProche || '').toLowerCase();
+      }).length : 0;
+      ctx += '[DONNÉES PADA] Voirie proche : ' + t.voirieProche + (t.distVoirie ? ' (' + (t.distVoirie * 1000).toFixed(0) + ' m)' : '') + '\n';
+      if (countVoirie > 0) ctx += '[DONNÉES PADA] Nombre de points PADA dans cette voirie : ' + countVoirie + '\n';
+    }
+    if (t.shemMakom) ctx += '[DONNÉES PCNT v3.1] Shem haMakom : ' + (t.shemMakom.fr || '') + (t.shemMakom.heb ? ' · ' + t.shemMakom.heb : '') + '\n';
+    if (t.shemShaar) ctx += '[DONNÉES PCNT v3.1] Sha\'ar : ' + (t.shemShaar.fr || '') + '\n';
+    if (t.mishkan) ctx += '[DONNÉES PCNT v3.1] Mishkan : ' + (t.mishkan.fr || '') + '\n';
+    return ctx;
+  }
+
+  function renderText(text) {
+    text = text.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '');
+    var lines = text.split('\n');
+    var out = [];
+    var skipMode = false;
+    for (var i = 0; i < lines.length; i++) {
+      var l = lines[i];
+      if (/^(the |let me|actually|i need|i should|i must|i'll|i want|first|looking at)/i.test(l.trim()) && !/[àáâãäåæçèéêëìíîïðñòóôõöùúûü]/i.test(l)) {
+        skipMode = true; continue;
+      }
+      if (skipMode && l.trim() === '') { skipMode = false; continue; }
+      if (!skipMode) out.push(l);
+    }
+    var result = out.join('\n').trim();
+    // Rendu **gras**
+    result = result.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    // Auto-gras sur intitulés PADA canoniques
+    var _pLabels = ['Rue','Numéro','Voirie proche','Ville',
+      'Points PADA recensés dans la voirie proche',
+      'Nombre d\'adresses PADA™',
+      'ICL™','Source','Distance depuis ta position',
+      'Adresses PADA™','ICL Début','ICL Fin'];
+    _pLabels.forEach(function(lbl) {
+      var esc = lbl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      result = result.replace(new RegExp('(' + esc + ')(\\s*:)', 'g'), '<strong>$1</strong>$2');
+    });
+    // Icones [GPS_ICON] et [EYE_ICON]
+    result = result.replace(/\[GPS_ICON\]/g, '<span style=\"display:inline-block;vertical-align:middle;width:16px;height:16px;margin:0 2px\"><svg viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM3.06 13A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06z\"/></svg></span>');
+    result = result.replace(/\[EYE_ICON\]/g, '<span style=\"display:inline-block;vertical-align:middle;width:16px;height:16px;margin:0 2px\"><svg viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z\"/></svg></span>');
+    // Lien cliquable https://pada.ci
+    result = result.replace(/(https:\/\/pada\.ci)/g, '<a href="$1" target="_blank" style="color:#b45309;text-decoration:underline">$1</a>');
+    // Filtrer séparateurs et artefacts Markdown
+    result = result.replace(/^\s*---\s*$/gm, '');
+    result = result.replace(/^\s*\*\*\*\s*$/gm, '');
+    return result;
+  }
+
+  // Avatar résident · photo de profil si disponible
+  var _profilePhoto = null; // sera peuplé si l'habitant a une photo
+
+  function makeAiAvatar() {
+    var av = document.createElement('div');
+    av.className = 'msg-ai-avatar';
+    var img = document.createElement('img');
+    img.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADsAAABICAYAAABIk43cAAAFO0lEQVR42u2Zy4scVRTGv3NvVfUzJtFoIPGRYGIgk+WsIpoIgggScDG4UhBRd4IP3LiobhBUXPgHaDYBRUcI6k5RSFwoakADiQqK+CD4yIRk0s+quvd8LronDzOjM+lOptX7g0s1Tdep+51z76lzbgOBQCAQCAQCgUAgEAgEApOCjMvQzOys3Xl8hkADANBoNLjiyQgACP9PATB79qTRzMysncjIprOzSev0ddOlKD6zvmoydUVmSlWXZ32pAkB18fu63cE1KZW55ZpaPnPPVDsSyf15ywZsEDKeaI8kNk1T02w29bkDh7d+9e2vP+TOwwCOoAPgRWSRpSpQKlrtPrxysHQpFIPCGjMfx/aXarn8+eZrawdfe+a+TwgApIxDcDTKzV9PTQkAnJprb8082O/nFGMiEVnSLkG0O30Ubij0Ik+Y9ZJxy3y/f8fJ+d7Tdz/7+lsP7b31sQdFWuMQPJLYP45fLwDQ7mU7xMZibeYGq4WXSBQIdCjUOYUxi/3ME97TuYwFKA7rHtj/wTc38MiRe6TR8OeMXW4yGMdeyAq/U0mQlOHW+MsQUVDanb44ryIiAi72OxgAVkQiI8a63pm87ZO77n/3u4fRbOqeNLWrFtnDzUMKALnzO9QLRBbPAQTR6mRwnhCRZcdGxNg86+vcGTxO8lUReKCJ1YisAE0laQuvW9U7gJdmJAJodzI4pwNPcEVPMOpyo5Splw5+thkQpmlqrrrYNE0FAJ5/8+NNeeG3eO+gJFSpSnqC3lP92XbXZ4XzEHpy0eFIOICXuIFKSSLR2pp66cefTt12YVK8ysu4AaCJdiffUKmU2+hna42NDMSC5yLah02qiEqydGoRwCvgsi4ECmCwF5REEkeoVhIVsSbzxS0XJsWrKrbZFAWAFx+5++iBD7/Z9u3Pcxvb/e4657SeeY19VpQ7cdlY+7floahnud0vpuYQPdrPdT3oqaQksUW9WgJJKInfTnVLq/qeHRYJCuDUcFw2j73y3jtffj93uNvzthxbqVfLF+37XpZz1cUOChxKowH5euptOf8OPr7s5db+dZO8+uS+T29/Yv8XLFd218rwIMZeG49FrAwqm8v2/J40jQjKuvobxzua7PZZl4LxY8ZliIQsNf757r0AhPVq5aQxZrHEPDmRHSabkWdYOH9Wxuf/K7dnjx49ekkjt3HjRpw4cYLT09Pd5TmMV7RxH0ks09RIs6m/fPTUpk2/H/rEai8hLTk4dNAkUnMj6ieOHePuXbsk56Ba5NJ7ymBixS7gi25sXevmiunCwwyLAqACInNEkkAwAYxnGXtLwmSZM4nCcNjRqBEawuYTc94zPlOUYdczuMrwCsp/UOy/4CQviB3Xwl74sH2ECYpASXSzYvjNodUvKpaoqmDMaP5UEr1OH70sm8zIcjjJODJYUy2NZKfVzVA4RWzshIolkFiDUrUEGSGygyNXPzhr1gnbs4RACcTWoFarALLyt44sRPQCoQAnLEGJUJWMrbBWK9EaIYgVtn4KAmx3MxbOU+RybFzhBFUGoN5H9VikUi0PGhdVC0vA6bKf4RSm1ckkz4vI2GjQJFMjQoRUmQixGlHjUm2+UqklMJZKCuygXERUObt9mZFxrsiNkXatnHhAhhnJeptY67U0ctk5llJudnbG3nvTtg11U0inC6AK1Cox0SuklcX+mjtfOLkcOy8feL/G8ro1p+dbTCIrAJA7z2TtGsHp3882H9/XReAqRnahgV/qESs4xRAu0b8P//5kCFkgEAgEAoFAIBAIBAKBwL+OPwGnRqv/qNwy6QAAAABJRU5ErkJggg==';
+    img.alt = 'Or haBayit';
+    av.appendChild(img);
+    return av;
+  }
+
+  function makeUserAvatar() {
+    var av = document.createElement('div');
+    av.className = 'msg-user-avatar';
+    if (_profilePhoto) {
+      var img = document.createElement('img');
+      img.src = _profilePhoto;
+      img.alt = 'Résident';
+      av.appendChild(img);
+    } else {
+      av.textContent = 'MH';
+    }
+    return av;
+  }
+
+  function addMsg(role, text) {
+    var area = document.getElementById('convArea');
+    if (role === 'user') {
+      var wrap = document.createElement('div');
+      wrap.className = 'msg-user-wrap';
+      var av = makeUserAvatar();
+      var d = document.createElement('div');
+      d.className = 'msg-user';
+      d.textContent = text;
+      wrap.appendChild(d);
+      wrap.appendChild(av);
+      area.appendChild(wrap);
+    } else {
+      var wrap = document.createElement('div');
+      wrap.className = 'msg-ai-wrap';
+      var av = makeAiAvatar();
+      var msg = document.createElement('div');
+      msg.className = 'msg-ai';
+      msg.innerHTML = text.replace(/\n/g, '<br>');
+      wrap.appendChild(av);
+      wrap.appendChild(msg);
+      area.appendChild(wrap);
+    }
+    area.scrollTop = area.scrollHeight;
+    return area.lastElementChild;
+  }
+
+  function addTyping() {
+    var area = document.getElementById('convArea');
+    var wrap = document.createElement('div');
+    wrap.className = 'msg-ai-wrap';
+    wrap.id = 'typingBubble';
+    var av = makeAiAvatar();
+    var msg = document.createElement('div');
+    msg.className = 'msg-ai msg-typing';
+    msg.innerHTML = '<span></span><span></span><span></span>';
+    wrap.appendChild(av); wrap.appendChild(msg);
+    area.appendChild(wrap);
+    area.scrollTop = area.scrollHeight;
+  }
+
+  function removeTyping() {
+    var t = document.getElementById('typingBubble');
+    if (t) t.remove();
+  }
+
+  window.interrogate = async function(question) {
+    // Clé gérée côté serveur api.omhai.eu · pas de vérification navigateur
+    if (_orHaBayitPending) return; // protection double envoi
+    _orHaBayitPending = true;
+
+    _chatHistory.push({ role: 'user', content: getContexte() + '\n\nQuestion de l\'habitant : ' + question });
+    if (_chatHistory.length > 20) _chatHistory = _chatHistory.slice(-20);
+
+    addTyping();
+
+    try {
+      var resp = await fetch('https://api.omhai.eu/v1/or-habayit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system: CORPUS,
+          messages: _chatHistory
+        })
+      });
+      var data = await resp.json();
+      removeTyping();
+      _orHaBayitPending = false;
+      if (data.error) { addMsg('ai', 'Erreur API : ' + data.error.message); return; }
+      var raw = (data.content || []).filter(function(b) { return b.type === 'text'; }).map(function(b) { return b.text; }).join('');
+
+      // ── TERRITORY ACTION LAYER™ · Parsing intent ────────────
+      var talMatch = raw.match(/<TAL>([\s\S]*?)<\/TAL>/);
+      if (talMatch) {
+        try {
+          var talIntent = JSON.parse(talMatch[1]);
+          var talResult = TAL.execute(talIntent);
+          console.log('[TAL] Result:', JSON.stringify(talResult));
+          // Injecter le résultat SEARCH_PLACE dans le contexte
+          if (talResult && (talResult.action === 'SEARCH_PLACE' || talResult.action === 'HIGHLIGHT_ROAD') && (talResult.status === 'SUCCESS' || talResult.status === 'OK') && talResult.count > 0) {
+            var spResult = '[R\u00c9SULTAT SEARCH_PLACE]\n';
+            if (talResult.st_name) spResult += 'Rue officielle : ' + talResult.st_name + '\n';
+            spResult += 'Adresses PADA\u2122 index\u00e9es : ' + (talResult.count || talResult.objects_visible || 0) + '\n';
+            if (talResult.dist_m !== null && talResult.dist_m !== undefined) spResult += 'Distance depuis ta position : ' + talResult.dist_m + ' m\u00e8tres\n';
+            if (talResult.num_min !== null && talResult.num_min !== undefined) spResult += 'Premier num\u00e9ro : ' + talResult.num_min + '\n';
+            if (talResult.num_max !== null && talResult.num_max !== undefined) spResult += 'Dernier num\u00e9ro : ' + talResult.num_max + '\n';
+            _chatHistory.push({ role: 'user', content: spResult });
+            _chatHistory.push({ role: 'assistant', content: 'Résultat SEARCH_PLACE reçu.' });
+          }
+
+          // Injecter le résultat SEARCH_NUMBER dans le contexte
+          if (talResult && talResult.action === 'SEARCH_NUMBER' && talResult.status === 'OK') {
+            var injected = '[RÉSULTAT SEARCH_NUMBER]\n';
+            injected += 'Rue : ' + talResult.st_name + '\n';
+            injected += 'Numéro trouvé : ' + talResult.numero + '\n';
+            injected += talResult.exact ? 'Correspondance : exacte\n' : 'Correspondance : approximative\n';
+            if (talResult.dist_m !== null) injected += 'Distance : ' + talResult.dist_m + ' mètres\n';
+            // LOI 6 OR haAdresse · voisins supprimés · point unique
+            injected += 'ICL : ' + talResult.icl + '\n';
+            // Ajouter comme contexte système pour la prochaine réponse
+            _chatHistory.push({ role: 'user', content: injected });
+            _chatHistory.push({ role: 'assistant', content: 'Données reçues du Territory Action Layer.' });
+          }
+        } catch(talErr) {
+          console.warn('[TAL] Intent invalide:', talErr.message, talMatch[1]);
+        }
+        raw = raw.replace(/<TAL>[\s\S]*?<\/TAL>/g, '').trim();
+      }
+
+      var text = renderText(raw);
+      addMsg('ai', text);
+      _chatHistory.push({ role: 'assistant', content: raw });
+    } catch(e) {
+      removeTyping();
+      _orHaBayitPending = false;
+      var errMsg = e && e.message ? e.message : String(e);
+      console.error('[OmeH.ai] Erreur Anthropic:', errMsg);
+      addMsg('ai', (function() {
+          if (errMsg && errMsg.includes('token')) {
+            return "Or haBayit n'est pas encore disponible sur api.omhai.eu ✦\nL'endpoint /v1/or-habayit doit être déployé sur le backend Render.";
+          }
+          return "Connexion au Passage impossible · " + errMsg + "\nVérifiez la connexion à api.omhai.eu";
+        })());
+    }
+  };
+
+  // ── INPUT ──────────────────────────────────────────────────
+  var chatInput = document.getElementById('chatInput');
+  var sendBtn = document.getElementById('sendBtn');
+
+  var _orHaBayitPending = false;
+  var _casBNumero = null;      // Numéro mémorisé pendant l'attente de confirmation Cas B
+  var _casBEnAttente = false;  // true = Martin attend que l'habitant choisisse une rue (Cas B)
+  var _casBRueConfirmee = null; // Rue confirmée par l'habitant · en attente du SEARCH_NUMBER
+  var _casBSuggestions = [];    // Rues candidates mémorisées · LOI 1 · CORRECTION_PROPOSED
+  var _loi3EnAttente = false;   // LOI 3 · AWAIT_NUMBER_APPROVAL · numéro substitué en attente
+  var _loi3NumeroSaisi = null;  // LOI 3 · numéro original saisi par l'habitant
+  var _loi3NumeroSubstitue = null; // LOI 3 · numéro le plus proche retourné par PADA™
+  var _loi3Rue = null;          // LOI 3 · rue confirmée pour PRESENT_RESULT après approbation
+  var _loi3SnResult = null;     // LOI 3 · résultat SEARCH_NUMBER complet · libéré après approbation
+
+
+  // ── LOI D'EXTRACTION · Makom Intelligence™ ───────────────────────────
+  // LOI 1 : numéro = ancrage · tout ce qui suit (≥ 3 chars) = rue
+  // LOI 2 : sans numéro · ancrer sur mot de voirie · fallback ≥ 3 chars
+
+  var _VOIRIE = ['rue','avenue','boulevard','impasse','allee','allee','voie','chemin','passage','cite','cite','lot'];
+
+  function parseAdresse(q) {
+    // LOI 1 · numéro → ancrage · tout ce qui suit = rue
+    var m = q.match(/\b(\d+)\s+([A-Za-z\u00C0-\u017E'\u2019\u2018\-\s]{3,})/i);
+    if (!m) return null;
+    var rue = m[2].replace(/[.!?,;]+.*$/, '').trim();
+    var toks = rue.split(/\s+/);
+    var start = 0;
+    for (var i = 0; i < toks.length; i++) { if (toks[i].length >= 3) { start = i; break; } }
+    rue = toks.slice(start).join(' ').trim();
+    if (!rue || rue.length < 3) return null;
+    return { numero: parseInt(m[1]), rue: rue };
+  }
+
+  function extractRueFragment(q) {
+    // LOI 2 · pas de numéro
+    // PASSE 1 · ancrer sur le premier mot de voirie
+    var qLow = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    var bestIdx = -1;
+    _VOIRIE.forEach(function(kw) {
+      var idx = qLow.indexOf(kw);
+      if (idx >= 0 && (bestIdx < 0 || idx < bestIdx)) bestIdx = idx;
+    });
+    if (bestIdx >= 0) {
+      return q.slice(bestIdx).replace(/[.!?,;]+.*$/, '').trim();
+    }
+    // PASSE 2 · fallback · premier token ≥ 3 chars
+    var toks = q.replace(/[.!?,;]+/g, ' ').split(/\s+/);
+    var sidx = -1;
+    for (var i = 0; i < toks.length; i++) { if (toks[i].length >= 3) { sidx = i; break; } }
+    return sidx >= 0 ? toks.slice(sidx).join(' ').trim() : q;
+  }
+
+
+  function send() {
+    var q = chatInput.value.trim();
+    if (!q) return;
+    if (_orHaBayitPending) return;
+    chatInput.value = '';
+    addMsg('user', q);
+
+    // ── SÉQUENCE CAS B · trois étapes strictement ordonnées ───────────────────
+    // Loi : chaque séquence ne s'active que si la précédente a déposé sa valeur.
+    // SÉQ 1 → _casBEnAttente=true, _casBRueConfirmee=null  : habitant choisit la rue
+    // SÉQ 2 → _casBEnAttente=true, _casBRueConfirmee=défini : habitant saisit le numéro
+    // SÉQ 3 → réinitialisation complète
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // ── LOI 3 · HISHTAQQUT haMispar · AWAIT_NUMBER_APPROVAL ─────────────
+    // CONDITION : _loi3EnAttente=true · habitant répond oui/non au numéro substitué
+    // NUMBER_APPROVED → PRESENT_RESULT · NUMBER_REJECTED → réinitialisation
+    if (_loi3EnAttente) {
+      var repLoi3 = q.trim().toLowerCase();
+      var numLoi3 = parseInt(q.trim());
+      var approvedByNumber = !isNaN(numLoi3) && numLoi3 === _loi3NumeroSubstitue;
+      var approved = approvedByNumber || /^(oui|ok|yes|d\'accord)/i.test(repLoi3);
+      var rejected  = /^(non|no|annuler|pas|autre)/.test(repLoi3);
+
+      if (approved) {
+        // NUMBER_APPROVED → PRESENT_RESULT
+        var r = _loi3SnResult;
+        var approvedCtx = '[SEQ-MARTIN-LOI3 · NUMBER_APPROVED · PRESENT_RESULT]\n';
+        approvedCtx += 'Rue : ' + r.st_name + '\n';
+        approvedCtx += 'Numéro saisi : ' + _loi3NumeroSaisi + '\n';
+        approvedCtx += 'Numéro affiché : ' + r.numero + ' (le plus proche indexé dans PADA\u2122)\n';
+        if (r.dist_m) approvedCtx += 'Distance : ' + r.dist_m + ' mètres\n';
+        if (r.icl)    approvedCtx += 'ICL : ' + r.icl + '\n';
+        if (_territoireActif && _territoireActif.shemMakom && _territoireActif.shemMakom.fr) {
+          approvedCtx += 'Shem haMakom : ' + _territoireActif.shemMakom.fr + '\n';
+        }
+        if (r.position && r.total) {
+          var p3 = r.position, t3 = r.total;
+          approvedCtx += 'LOI POSITION : ' + (
+            p3 === 1   ? 'C\'est la **1ère** adresse indexée dans cette rue.' :
+            p3 === t3  ? 'C\'est la **dernière** adresse indexée dans cette rue (' + p3 + ' sur ' + t3 + ').' :
+                         'C\'est la **' + p3 + 'ème** adresse sur **' + t3 + '** indexées dans cette rue.'
+          ) + '\n';
+        }
+        if (!r.dist_m) approvedCtx += 'LOI DISTANCE : GPS non disponible · omettre la distance.\n';
+        if (!r.icl)    approvedCtx += 'LOI ICL : ICL non disponible · omettre la ligne.\n';
+        approvedCtx += 'LOI6 OR-haAdresse : Je viens d allumer ce point sur la carte. Masque les bulles avec ⦿ pour le voir. LOI FORMATAGE : valeurs réelles uniquement · zéro placeholder · pas de voisins · pas de signature.';
+        _chatHistory.push({ role: 'user', content: approvedCtx });
+        _chatHistory.push({ role: 'assistant', content: 'LOI3 · NUMBER_APPROVED · PRESENT_RESULT.' });
+
+        // Réinitialiser LOI 3
+        _loi3EnAttente = false; _loi3NumeroSaisi = null;
+        _loi3NumeroSubstitue = null; _loi3Rue = null; _loi3SnResult = null;
+
+        if (_gpsResolving) { setTimeout(function() { interrogate(q); }, 3000); } else { interrogate(q); }
+        return;
+
+      } else if (rejected) {
+        // NUMBER_REJECTED · pas de PRESENT_RESULT · invitation à resaisir
+        var rejCtx = '[SEQ-MARTIN-LOI3 · NUMBER_REJECTED]\n';
+        rejCtx += 'LOI : L\'habitant refuse le numéro substitué. '
+                + 'Dis : Le ' + _loi3NumeroSubstitue + ' n\'est pas ce que vous cherchez. '
+                + 'Pouvez-vous me donner le nom de la rue ou un autre numéro ? Pas de signature.';
+        _chatHistory.push({ role: 'user', content: rejCtx });
+        _chatHistory.push({ role: 'assistant', content: 'LOI3 · NUMBER_REJECTED · réinitialisation.' });
+
+        // Réinitialiser LOI 3
+        _loi3EnAttente = false; _loi3NumeroSaisi = null;
+        _loi3NumeroSubstitue = null; _loi3Rue = null; _loi3SnResult = null;
+
+        if (_gpsResolving) { setTimeout(function() { interrogate(q); }, 3000); } else { interrogate(q); }
+        return;
+      }
+      // Réponse non reconnue · on laisse passer au LLM
+    }
+
+    // ── SÉQ 2 · Numéro · CONDITION : rue confirmée déposée par SÉQ 1 ────────
+    // LOI7 SHLIMUT · SÉQ 2 · _casBNumero peut être null · le numéro vient de la saisie
+    if (_casBEnAttente && _casBRueConfirmee !== null) {
+      var tourNumero = null;
+      var numMatch2 = q.trim().match(/^\d+$/);
+      if (numMatch2) tourNumero = parseInt(q.trim());
+      if (!tourNumero && /^oui$/i.test(q.trim())) tourNumero = _casBNumero;
+
+      if (tourNumero !== null) {
+        var snTour2 = TAL.execute({ action: 'SEARCH_NUMBER', st_name: _casBRueConfirmee, numero: tourNumero });
+        if (snTour2 && snTour2.status === 'OK') {
+          var snCtxT2 = '[RÉSULTAT SEARCH_NUMBER · Cas B SÉQ 2]\n';
+          snCtxT2 += 'Rue : ' + snTour2.st_name + '\n';
+          snCtxT2 += 'Numéro trouvé : ' + snTour2.numero + '\n';
+          snCtxT2 += (snTour2.exact ? 'Correspondance : exacte\n' : 'Correspondance : approximative · le numéro ' + tourNumero + ' n\'est pas indexé dans PADA · numéro le plus proche affiché\n');
+          if (snTour2.dist_m !== null && snTour2.dist_m !== undefined) snCtxT2 += 'Distance : ' + snTour2.dist_m + ' mètres\n';
+          if (snTour2.icl) snCtxT2 += 'ICL : ' + snTour2.icl + '\n';
+          if (snTour2.position && snTour2.total) snCtxT2 += 'Position dans la rue : ' + snTour2.position + ' sur ' + snTour2.total + '\n';
+          if (_territoireActif && _territoireActif.shemMakom && _territoireActif.shemMakom.fr) snCtxT2 += 'Shem haMakom (français) : ' + _territoireActif.shemMakom.fr + '\n';
+          // LOI POSITION SÉQ2 · valeurs réelles
+          if (snTour2.position && snTour2.total) {
+            var pos2 = snTour2.position, tot2 = snTour2.total;
+            var posStr2 = pos2 === 1 ? 'C\'est la **1ère** adresse indexée dans cette rue.'
+              : pos2 === tot2 ? 'C\'est la **dernière** adresse indexée dans cette rue (' + pos2 + ' sur ' + tot2 + ').'
+              : 'C\'est la **' + pos2 + 'ème** adresse sur **' + tot2 + '** indexées dans cette rue.';
+            snCtxT2 += 'LOI POSITION : ' + posStr2 + '\n';
+          }
+          if (!snTour2.dist_m) snCtxT2 += 'LOI DISTANCE : GPS non disponible · ne jamais écrire [X] m · omettre la distance.\n';
+          if (!snTour2.icl) snCtxT2 += 'LOI ICL : ICL non disponible · ne jamais écrire [ICL] · omettre la ligne.\n';
+          snCtxT2 += 'LOI FORMATAGE SÉQ2 : mets en gras uniquement les valeurs réelles. Ne jamais écrire de placeholder entre crochets. Si correspondance approximative : signale que le numéro ' + tourNumero + ' n\'est pas dans PADA. Pas de voisins. Pas de signature.';
+          _chatHistory.push({ role: 'user', content: snCtxT2 });
+          _chatHistory.push({ role: 'assistant', content: 'Données numéro reçues.' });
+        }
+        // SÉQ 3 · réinitialisation
+        _casBEnAttente = false;
+        _casBNumero = null;
+        _casBRueConfirmee = null;
+        if (_gpsResolving) { setTimeout(function() { interrogate(q); }, 3000); } else { interrogate(q); }
+        return;
+      }
+      // Saisie non reconnue comme numéro · réinitialiser
+      _casBEnAttente = false;
+      _casBNumero = null;
+      _casBRueConfirmee = null;
+    }
+
+    // ── SÉQ 1 · Choix de rue · CONDITION : _casBEnAttente=true ET rue pas encore confirmée ──
+    if (_casBEnAttente && _casBRueConfirmee === null && _casBSuggestions && _casBSuggestions.length > 0) {
+      var rueChoisie = null;
+
+      // LOI 1 · CORRECTION_CONFIRMED · "oui" = confirmer la rue proposée
+      if (/^oui$/i.test(q.trim()) && _casBSuggestions && _casBSuggestions.length > 0) {
+        rueChoisie = _casBSuggestions[0];
+      }
+
+      // L\'habitant a saisi un numéro de liste (1, 2, 3)
+      if (!rueChoisie) {
+        var choixNum = q.trim().match(/^([123])$/);
+        if (choixNum) {
+          var idx = parseInt(choixNum[1]) - 1;
+          if (_casBSuggestions && _casBSuggestions[idx]) {
+            rueChoisie = _casBSuggestions[idx];
+          } else {
+            // Fallback · chercher dans _chatHistory
+            for (var hi = _chatHistory.length - 1; hi >= 0; hi--) {
+              var hc = _chatHistory[hi].content || '';
+              if (hc.indexOf('SEQ-MARTIN-LOI') >= 0 // ancien marqueur supprimé) {
+                var blines = hc.split('\n');
+                for (var bli = 0; bli < blines.length; bli++) {
+                  var bm = blines[bli].match(/^(\d+)\.\s+(.+)$/);
+                  if (bm && parseInt(bm[1]) === parseInt(choixNum[1])) { rueChoisie = bm[2].trim(); break; }
+                }
+                if (rueChoisie) break;
+              }
+            }
+          }
+        }
+      }
+
+      // L\'habitant a saisi le nom de rue directement
+      if (!rueChoisie) rueChoisie = q.trim();
+
+      if (rueChoisie) {
+        var confirmResult = TAL.execute({ action: 'SEARCH_PLACE', query: rueChoisie });
+        if (confirmResult && confirmResult.status === 'OK' && confirmResult.count > 0) {
+
+          // LOI 1 · CORRECTION_CONFIRMED → PLACE_CONFIRMED
+          var confirmCtx = '[SEQ-MARTIN-LOI1 · CORRECTION_CONFIRMED · RUE VERROUILLÉE]\n';
+          confirmCtx += 'Rue confirmée : ' + confirmResult.st_name + '\n';
+          confirmCtx += 'Adresses PADA\u2122 indexées : ' + confirmResult.count + '\n';
+          if (confirmResult.icl_debut) confirmCtx += 'ICL Début : ' + confirmResult.icl_debut + '\n';
+          if (confirmResult.icl_fin)   confirmCtx += 'ICL Fin : '   + confirmResult.icl_fin   + '\n';
+          // LOI 5 · CHECK_GPS_ACTIVE · COMPUTE_DISTANCE
+          if (_territoireActif && _territoireActif.lat && confirmResult.dist_m) {
+            confirmCtx += 'Distance depuis ta position : ' + confirmResult.dist_m + ' m\u00e8tres\n';
+          }
+          confirmCtx += '[LOI6-OR-haVoirie] Les **' + confirmResult.count + '** points de la **' + confirmResult.st_name + '** sont allumés sur la carte. Masque les bulles avec \u29BF pour les voir. CTA : Cherches-tu un num\u00e9ro pr\u00e9cis ? Pas de signature.';
+          _chatHistory.push({ role: 'user', content: confirmCtx });
+          _chatHistory.push({ role: 'assistant', content: 'Rue ' + confirmResult.st_name + ' verrouillée · LOI 1 satisfaite.' });
+
+          // PLACE_CONFIRMED · déposer pour SÉQ 2
+          _casBRueConfirmee = confirmResult.st_name;
+          _casBSuggestions = [];
+
+          // LOI 0 · si numéro déjà mémorisé → SEARCH_NUMBER immédiat · pas d'attente
+          if (_casBNumero !== null) {
+            var snImmediat = TAL.execute({ action: 'SEARCH_NUMBER', st_name: confirmResult.st_name, numero: _casBNumero });
+            if (snImmediat && snImmediat.status === 'OK') {
+              var snICtx = '[SEQ-MARTIN-LOI2 · SEARCH_NUMBER · APRES CONFIRMATION RUE]\n';
+              snICtx += 'Rue : ' + snImmediat.st_name + '\n';
+
+              if (snImmediat.exact) {
+                snICtx += 'Numéro : ' + snImmediat.numero + '\n';
+                snICtx += 'Correspondance : exacte\n';
+              } else {
+                // LOI 3 · EXACT_FALSE → SIGNAL_BOTH_NUMBERS → AWAIT_NUMBER_APPROVAL
+                var signalICtx = '[SEQ-MARTIN-LOI3 · SIGNAL_BOTH_NUMBERS]\n';
+                signalICtx += 'Numéro saisi : ' + _casBNumero + '\n';
+                signalICtx += 'Numéro le plus proche dans PADA\u2122 : ' + snImmediat.numero + '\n';
+                signalICtx += 'Rue : ' + snImmediat.st_name + '\n';
+                signalICtx += 'LOI SIGNAL : Le **' + _casBNumero + '** n\'est pas indexé dans PADA\u2122 '
+                            + 'pour la ' + snImmediat.st_name + '. '
+                            + 'Le numéro le plus proche est le **' + snImmediat.numero + '**. '
+                            + 'Pose UNE seule question : Souhaitez-vous les détails du **' + snImmediat.numero + '** ? '
+                            + 'Pas de détails · pas de distance · pas d\'ICL · pas de signature.';
+                _chatHistory.push({ role: 'user', content: signalICtx });
+                _chatHistory.push({ role: 'assistant', content: 'LOI3 · SIGNAL_BOTH_NUMBERS · attente approbation.' });
+                _loi3EnAttente = true;
+                _loi3NumeroSaisi = _casBNumero;
+                _loi3NumeroSubstitue = snImmediat.numero;
+                _loi3Rue = snImmediat.st_name;
+                _loi3SnResult = snImmediat;
+                _casBEnAttente = false; _casBNumero = null; _casBRueConfirmee = null;
+                if (_gpsResolving) { setTimeout(function() { interrogate('[SIGNAL_BOTH_NUMBERS]'); }, 3000); }
+                else { interrogate('[SIGNAL_BOTH_NUMBERS]'); }
+                return;
+              }
+
+              if (snImmediat.dist_m) snICtx += 'Distance : ' + snImmediat.dist_m + ' mètres\n';
+              if (snImmediat.icl)    snICtx += 'ICL : ' + snImmediat.icl + '\n';
+              if (_territoireActif && _territoireActif.shemMakom && _territoireActif.shemMakom.fr) {
+                snICtx += 'Shem haMakom : ' + _territoireActif.shemMakom.fr + '\n';
+              }
+              if (snImmediat.position && snImmediat.total) {
+                var pi = snImmediat.position, ti = snImmediat.total;
+                snICtx += 'LOI POSITION : ' + (
+                  pi === 1  ? 'C\'est la **1ère** adresse indexée dans cette rue.' :
+                  pi === ti ? 'C\'est la **dernière** adresse indexée dans cette rue (' + pi + ' sur ' + ti + ').' :
+                              'C\'est la **' + pi + 'ème** adresse sur **' + ti + '** indexées dans cette rue.'
+                ) + '\n';
+              }
+              if (!snImmediat.dist_m) snICtx += 'LOI DISTANCE : GPS non disponible · omettre la distance.\n';
+              if (!snImmediat.icl)    snICtx += 'LOI ICL : ICL non disponible · omettre la ligne.\n';
+              snICtx += 'LOI6 OR-haAdresse : Je viens d allumer ce point sur la carte. Masque les bulles avec ⦿ pour le voir. LOI FORMATAGE : valeurs réelles uniquement · zéro placeholder · pas de voisins · pas de signature.';
+              _chatHistory.push({ role: 'user', content: snICtx });
+              _chatHistory.push({ role: 'assistant', content: 'Résultat adresse transmis.' });
+            }
+            _casBEnAttente = false; _casBNumero = null; _casBRueConfirmee = null;
+            if (_gpsResolving) { setTimeout(function() { interrogate(q); }, 3000); } else { interrogate(q); }
+            return;
+          }
+
+          // Pas de numéro mémorisé · afficher Structure C · attendre numéro
+          // LOI 5 · CHECK_GPS_ACTIVE · COMPUTE_DISTANCE vers centroïde rue
+          var _distRueCtx = '';
+          if (_territoireActif && _territoireActif.lat && confirmResult.dist_m) {
+            _distRueCtx = 'Distance depuis ta position : ' + confirmResult.dist_m + ' mètres\n';
+          }
+          var _seq1Question = '[AFFICHER RUE CONFIRMÉE] LOI : affiche les détails de la rue. '
+                            + (_distRueCtx ? _distRueCtx : '')
+                            + 'Invitation [EYE_ICON]. CTA : Cherches-tu un numéro précis ? Pas de signature.';
+                            + 'Invitation [EYE_ICON]. CTA : Cherches-tu un numéro précis ? Pas de signature.';
+          if (_gpsResolving) { setTimeout(function() { interrogate(_seq1Question); }, 3000); } else { interrogate(_seq1Question); }
+          return;
+        }
+      }
+      // Rue non reconnue · réinitialiser
+      _casBEnAttente = false;
+      _casBNumero = null;
+      _casBSuggestions = [];
+      _casBRueConfirmee = null;
+    }
+
+    // ── SEQ-MARTIN · LOI 0 → LOI 1 → LOI 2 ─────────────────────────────────
+    // LOI 0 : RECEIVE_INPUT → SEARCH_PLACE → PLACE_CONFIRMED → SEARCH_NUMBER
+    //          SEARCH_NUMBER interdit avant PLACE_CONFIRMED
+    // LOI 1 : COMPARE_NAMES → si différent → CORRECTION_PROPOSED → CONFIRMED
+    //          SEARCH_NUMBER interdit si NAMES_DIFFER sans CORRECTION_CONFIRMED
+    // LOI 2 : CHECK_EXACT_FLAG → si false → SIGNAL_BOTH_NUMBERS → PRESENT_RESULT
+    //          PRESENT_RESULT interdit si EXACT_FALSE sans SIGNAL_BOTH_NUMBERS
+
+    var adresse = parseAdresse(q);
+    if (adresse && _adressesData && _adressesData.length) {
+
+      // ── LOI 0 · RECEIVE_INPUT → SEARCH_PLACE ──────────────────
+      var spResult = TAL.execute({ action: 'SEARCH_PLACE', query: adresse.rue });
+
+      // ── ZÉRO RÉSULTAT · suggestions Levenshtein ───────────────
+      if (spResult && spResult.code === 'NO_RESULT') {
+        var suggestions = spResult.suggestions || (spResult.correction ? [spResult.correction] : []);
+        var casB = '[SEQ-MARTIN-LOI0 · NO_RESULT · SUGGESTIONS]\n';
+        casB += 'Saisie habitant : ' + adresse.rue + '\n';
+        casB += 'Numéro mémorisé : ' + adresse.numero + '\n';
+        casB += 'Suggestions rues :\n';
+        suggestions.forEach(function(s, i) { casB += (i+1) + '. ' + s + '\n'; });
+        casB += 'LOI : Je n\'ai pas trouvé "' + adresse.rue + '" dans le Système PADA\u2122. '
+              + 'Voici les rues les plus proches, laquelle cherchez-vous ? '
+              + 'Liste numérotée · chaque nom en gras · pas de numéro d\'adresse · pas de signature.';
+        _chatHistory.push({ role: 'user', content: casB });
+        _chatHistory.push({ role: 'assistant', content: 'Suggestions rues proposées.' });
+        _casBEnAttente = true;
+        _casBNumero = adresse.numero;
+        _casBRueConfirmee = null;
+
+      // ── PLUSIEURS RUES · l\'habitant choisit ──────────────────
+      } else if (spResult && spResult.code === 'MULTI_MATCH' && spResult.rues) {
+
+        // ── LOI 4 · GHVUL haMitsar · borner la liste à 3 ────────
+        var ruesBornees = spResult.rues.slice(0, 3);
+
+        // ── LOI 4 · SEDER haZikaron · mémoriser AVANT émission ───
+        _casBSuggestions = ruesBornees;
+        _casBEnAttente = true;
+        _casBNumero = adresse.numero;
+        _casBRueConfirmee = null;
+
+        // ── LOI 4 · RESHIMAT haBehirah · LIST_PRODUCED → AWAIT_SELECTION ──
+        var casC = '[SEQ-MARTIN-LOI4 · MULTI_MATCH · AWAIT_SELECTION]\n';
+        casC += 'Saisie habitant : ' + adresse.rue + '\n';
+        casC += 'Numéro mémorisé : ' + adresse.numero + '\n';
+        casC += 'Rues trouvées (max 3) :\n';
+        ruesBornees.forEach(function(r, i) { casC += (i+1) + '. ' + r + '\n'; });
+        casC += 'LOI : J\'ai trouvé ' + ruesBornees.length + ' rue(s) correspondante(s). Laquelle cherches-tu ? '
+              + 'Liste numérotée · chaque nom en gras · pas de numéro d\'adresse · pas de signature. '
+              + 'L\'habitant peut répondre par le numéro (1, 2, 3) ou le nom de la rue.';
+        _chatHistory.push({ role: 'user', content: casC });
+        _chatHistory.push({ role: 'assistant', content: 'LOI4 · LIST_PRODUCED · AWAIT_SELECTION ouverte · ' + ruesBornees.length + ' rues mémorisées.' });
+
+      // ── UNE RUE TROUVÉE · LOI 1 · COMPARE_NAMES ──────────────
+      } else if (spResult && spResult.status === 'OK' && spResult.count > 0) {
+        var rueSaisie   = adresse.rue.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+        var rueOfficielle = (spResult.st_name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+        var namesIdentical = (rueSaisie === rueOfficielle);
+
+        if (!namesIdentical) {
+          // ── LOI 1 · NAMES_DIFFER → CORRECTION_PROPOSED ────────
+          // SEARCH_NUMBER interdit · attendre CORRECTION_CONFIRMED
+          var corrCtx = '[SEQ-MARTIN-LOI1 · NAMES_DIFFER · CORRECTION_PROPOSED]\n';
+          corrCtx += 'Saisi par l\'habitant : ' + adresse.rue + '\n';
+          corrCtx += 'Rue officielle PADA\u2122 : ' + spResult.st_name + '\n';
+          corrCtx += 'Numéro mémorisé : ' + adresse.numero + '\n';
+          corrCtx += 'Adresses indexées dans cette rue : ' + spResult.count + '\n';
+          corrCtx += 'LOI : Vous avez saisi "' + adresse.rue + '". '
+                   + 'J\'ai trouvé **' + spResult.st_name + '**. '
+                   + 'Est-ce bien cette rue ? Le numéro ' + adresse.numero + ' sera recherché après confirmation. '
+                   + 'Répondre oui pour confirmer. Pas de signature.';
+          _chatHistory.push({ role: 'user', content: corrCtx });
+          _chatHistory.push({ role: 'assistant', content: 'Correction proposée · attente confirmation.' });
+          _casBEnAttente = true;
+          _casBNumero = adresse.numero;
+          _casBRueConfirmee = null;
+          // Mémoriser la rue officielle pour confirmation directe
+          _casBSuggestions = [spResult.st_name];
+
+        } else {
+          // ── LOI 1 · NAMES_IDENTICAL → SEARCH_NUMBER direct ────
+          // LOI 0 respectée · LOI 1 respectée · passer à LOI 2
+
+          // ── LOI 2 · SEARCH_NUMBER → CHECK_EXACT_FLAG ──────────
+          var snResult = TAL.execute({ action: 'SEARCH_NUMBER', st_name: spResult.st_name, numero: adresse.numero });
+          if (snResult && snResult.status === 'OK') {
+            var snCtx = '[SEQ-MARTIN-LOI2 · SEARCH_NUMBER]\n';
+            snCtx += 'Rue : ' + snResult.st_name + '\n';
+
+            // ── LOI 2 · CHECK_EXACT_FLAG ──────────────────────────
+            if (snResult.exact) {
+              // EXACT_TRUE → PRESENT_RESULT direct
+              snCtx += 'Numéro : ' + snResult.numero + '\n';
+              snCtx += 'Correspondance : exacte\n';
+            } else {
+              // ── LOI 3 · EXACT_FALSE → SIGNAL_BOTH_NUMBERS → AWAIT_NUMBER_APPROVAL ──
+              // PRESENT_RESULT interdit avant NUMBER_APPROVED
+              var signalCtx = '[SEQ-MARTIN-LOI3 · SIGNAL_BOTH_NUMBERS]\n';
+              signalCtx += 'Numéro saisi : ' + adresse.numero + '\n';
+              signalCtx += 'Numéro le plus proche dans PADA\u2122 : ' + snResult.numero + '\n';
+              signalCtx += 'Rue : ' + snResult.st_name + '\n';
+              signalCtx += 'LOI SIGNAL : Le **' + adresse.numero + '** n\'est pas indexé dans PADA\u2122 '
+                         + 'pour la ' + snResult.st_name + '. '
+                         + 'Le numéro le plus proche est le **' + snResult.numero + '**. '
+                         + 'Pose UNE seule question : Souhaitez-vous les détails du **' + snResult.numero + '** ? '
+                         + 'Pas de détails · pas de distance · pas d\'ICL · pas de signature.';
+              _chatHistory.push({ role: 'user', content: signalCtx });
+              _chatHistory.push({ role: 'assistant', content: 'LOI3 · SIGNAL_BOTH_NUMBERS · attente approbation.' });
+
+              // AWAIT_NUMBER_APPROVAL · mémoriser pour libération après oui/non
+              _loi3EnAttente = true;
+              _loi3NumeroSaisi = adresse.numero;
+              _loi3NumeroSubstitue = snResult.numero;
+              _loi3Rue = snResult.st_name;
+              _loi3SnResult = snResult;
+
+              if (_gpsResolving) { setTimeout(function() { interrogate('[SIGNAL_BOTH_NUMBERS]'); }, 3000); }
+              else { interrogate('[SIGNAL_BOTH_NUMBERS]'); }
+              return;
+            }
+            if (snResult.dist_m) snCtx += 'Distance : ' + snResult.dist_m + ' mètres\n';
+            if (snResult.icl)    snCtx += 'ICL : ' + snResult.icl + '\n';
+            if (_territoireActif && _territoireActif.shemMakom && _territoireActif.shemMakom.fr) {
+              snCtx += 'Shem haMakom : ' + _territoireActif.shemMakom.fr + '\n';
+            }
+            if (snResult.position && snResult.total) {
+              var pos = snResult.position, tot = snResult.total;
+              snCtx += 'LOI POSITION : ' + (
+                pos === 1   ? 'C\'est la **1ère** adresse indexée dans cette rue.' :
+                pos === tot ? 'C\'est la **dernière** adresse indexée dans cette rue (' + pos + ' sur ' + tot + ').' :
+                              'C\'est la **' + pos + 'ème** adresse sur **' + tot + '** indexées dans cette rue.'
+              ) + '\n';
+            }
+            if (!snResult.dist_m) snCtx += 'LOI DISTANCE : GPS non disponible · omettre la distance.\n';
+            if (!snResult.icl)    snCtx += 'LOI ICL : ICL non disponible · omettre la ligne.\n';
+            snCtx += 'LOI6 OR-haAdresse : Je viens d allumer ce point sur la carte. Masque les bulles avec ⦿ pour le voir. LOI FORMATAGE : valeurs réelles uniquement · zéro placeholder · pas de voisins · pas de signature.';
+            _chatHistory.push({ role: 'user', content: snCtx });
+            _chatHistory.push({ role: 'assistant', content: 'Résultat adresse transmis.' });
+          }
+        }
+      }
+    }
+
+
+    // ── DÉTECTION NOM DE RUE SEUL · sans numéro ──────────────────
+    // Si parseAdresse() a retourné null (pas de syntaxe N°+Rue)
+    // ET que la saisie ressemble à un nom de rue (contient "rue" ou "avenue" ou "boulevard" etc.)
+    // → pré-injecter SEARCH_PLACE pour guider le LLM
+    if (!adresse && _adressesData && _adressesData.length) {
+      var qLow = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+      var rueKeywords = ['rue', 'avenue', 'boulevard', 'impasse', 'allee', 'voie', 'chemin', 'passage', 'cite', 'lot'];
+      var ressembleRue = rueKeywords.some(function(kw) { return qLow.indexOf(kw) >= 0; });
+
+      if (ressembleRue) {
+        // LOI 2 · extractRueFragment · ancrage voirie ou premier token ≥ 3 chars
+        var rueFragment = extractRueFragment(q);
+        var spRue = TAL.execute({ action: 'SEARCH_PLACE', query: rueFragment });
+
+        if (spRue && spRue.code === 'NO_RESULT') {
+          // Levenshtein · top 3 suggestions
+          // Maʿavar haKtav™ · mkNormalize + mkScore + mkFilter · normalizeR/levenshteinR supprimés
+          var ruesU = {};
+          for (var rui = 0; rui < _adressesData.length; rui++) {
+            var rusn = _adressesData[rui].properties.st_name || '';
+            if (rusn) ruesU[rusn] = true;
+          }
+          var qR = mkNormalize(rueFragment);
+          var suggs = Object.keys(ruesU).map(function(rue) {
+            return { rue: rue, score: mkScore(qR, mkNormalize(rue)) };
+          }).sort(function(a, b) { return a.dist - b.dist; }).slice(0, 3);
+
+          var suggListR = suggs.map(function(s, idx) { return (idx+1) + '. ' + s.rue; }).join('\n');
+          var ctxRue = '[RECHERCHE NOM DE RUE SEUL · RUE NON TROUVÉE]\n';
+          ctxRue += 'Saisie : ' + q + '\n';
+          ctxRue += 'Suggestions proches :\n' + suggListR + '\n';
+          ctxRue += 'LOI : Dis : Je n\'ai pas trouvé "' + q + '" dans le Système PADA\u2122. Voici les rues les plus proches de votre saisie, laquelle cherchez-vous ? puis liste numérotée avec chaque nom en gras. Pas de signature.';
+          _chatHistory.push({ role: 'user', content: ctxRue });
+          _chatHistory.push({ role: 'assistant', content: 'Suggestions rues présentées.' });
+
+        } else if (spRue && spRue.code === 'MULTI_MATCH' && spRue.rues) {
+
+          // ── LOI 4 · GHVUL haMitsar · borner à 3 ─────────────
+          var ruesBorneesRue = spRue.rues.slice(0, 3);
+
+          // ── LOI 4 · SEDER haZikaron · mémoriser AVANT émission
+          _casBSuggestions = ruesBorneesRue;
+          _casBEnAttente = true;
+          // _casBNumero = null ici · pas de numéro dans ce chemin
+          _casBRueConfirmee = null;
+
+          // ── LOI 4 · RESHIMAT haBehirah · AWAIT_SELECTION ─────
+          var ctxMulti = '[SEQ-MARTIN-LOI4 · MULTI_MATCH · AWAIT_SELECTION]\n';
+          ctxMulti += 'Saisie : ' + rueFragment + '\n';
+          ctxMulti += 'Rues trouvées (max 3) :\n';
+          ruesBorneesRue.forEach(function(r, i) { ctxMulti += (i+1) + '. ' + r + '\n'; });
+          ctxMulti += 'LOI : J\'ai trouvé ' + ruesBorneesRue.length + ' rue(s) correspondante(s). Laquelle cherches-tu ? '
+                    + 'Liste numérotée · chaque nom en gras · pas de signature. '
+                    + 'L\'habitant peut répondre par le numéro (1, 2, 3) ou le nom de la rue.';
+          _chatHistory.push({ role: 'user', content: ctxMulti });
+          _chatHistory.push({ role: 'assistant', content: 'LOI4 · LIST_PRODUCED · AWAIT_SELECTION ouverte · ' + ruesBorneesRue.length + ' rues mémorisées.' });
+
+        } else if (spRue && spRue.status === 'OK' && spRue.count > 0) {
+          // Rue trouvée · extraire ICL début/fin · injecter Structure C
+          var ctxFound = '[RECHERCHE NOM DE RUE SEUL · RUE TROUVÉE · STRUCTURE C]\n';
+          ctxFound += 'Rue : ' + spRue.st_name + '\n';
+          ctxFound += 'Adresses PADA\u2122 indexées : ' + spRue.count + '\n';
+          if (spRue.dist_m !== null && spRue.dist_m !== undefined) ctxFound += 'Distance depuis ta position : ' + spRue.dist_m + ' mètres\n';
+          if (spRue.icl_debut) ctxFound += 'ICL Début : ' + spRue.icl_debut + '\n';
+          if (spRue.icl_fin)   ctxFound += 'ICL Fin : '   + spRue.icl_fin   + '\n';
+          ctxFound += 'Source : Système PADA\u2122 · https://pada.ci · OmeH.ai\u2122\n';
+          ctxFound += '[LOI6-OR-haVoirie] Les **' + spRue.count + '** points de la **' + spRue.st_name + '** sont allumés sur la carte. Masque les bulles avec \u29BF pour les voir. CTA : Cherches-tu un num\u00e9ro pr\u00e9cis ? Pas de signature.';
+          _chatHistory.push({ role: 'user', content: ctxFound });
+          _chatHistory.push({ role: 'assistant', content: 'Structure C · rue ' + spRue.st_name + ' affichée.' });
+        }
+      }
+    }
+
+    if (_gpsResolving) {
+      setTimeout(function() { interrogate(q); }, 3000);
+    } else {
+      interrogate(q);
+    }
+  }
+
+  sendBtn.addEventListener('click', send);
+  chatInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); send(); }
+  });
+
+  window.sendChip = function(btn, prompt) {
+    document.querySelectorAll('.chip').forEach(function(c) { c.classList.remove('active'); });
+    btn.classList.add('active');
+    addMsg('user', btn.textContent.trim());
+    interrogate(prompt);
+    setTimeout(function() { btn.classList.remove('active'); }, 2000);
+  };
+
+  // ── MODAL CLÉ ──────────────────────────────────────────────
+  function openModal() {
+    document.getElementById('keyModal').classList.add('open');
+    setTimeout(function() { document.getElementById('keyInput').focus(); }, 80);
+  }
+  function closeModal() {
+    document.getElementById('keyModal').classList.remove('open');
+  }
+
+  document.getElementById('keyTrigger').addEventListener('click', openModal);
+  document.getElementById('keyCancel').addEventListener('click', closeModal);
+  document.getElementById('keyModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  document.getElementById('keySave').addEventListener('click', function() {
+    var val = document.getElementById('keyInput').value.trim();
+    if (!val || !val.startsWith('sk-')) {
+      document.getElementById('keyErr').textContent = 'La clé doit commencer par sk-';
+      document.getElementById('keyErr').style.display = 'block';
+      return;
+    }
+    _apiKey = val;
+    window._canalApiKey = val;
+    try { sessionStorage.setItem('omh_api_key', val); } catch(e) {}
+    closeModal();
+    addMsg('ai', 'Canal administrateur activé ✦\nLe Passage Territorial est ouvert.');
+  });
+
+  document.getElementById('keyInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('keySave').click();
+  });
+
+  // Init
+  // Clé API gérée côté serveur proxy · pas de modal au démarrage
+
+  // ── LIMITE CONV-AREA · les bulles ne franchissent pas les chips ──────────
+  function limitConvArea() {
+    var chips = document.getElementById('chipsAnchor');
+    var conv  = document.getElementById('convArea');
+    if (!chips || !conv) return;
+    var chipsBottom = chips.getBoundingClientRect().bottom;
+    var convTop     = conv.getBoundingClientRect().top;
+    var available   = chipsBottom - convTop;
+    if (available > 0) {
+      conv.style.maxHeight = available + 'px';
+    }
+  }
+  limitConvArea();
+  window.addEventListener('resize', limitConvArea);
+
+  // ── DÉMARRAGE TERRITORIAL v2f ──────────────────────────
+  initTerritoire();
+
+})();
+
+</script>
+</body>
+</html>
