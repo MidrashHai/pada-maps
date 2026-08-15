@@ -879,7 +879,7 @@ body {
   var _highlightLayer = null;
 
   var TAL = {
-    ALLOW: ['FLY_TO', 'ZOOM_TO', 'RESET_VIEW', 'SEARCH_PLACE', 'HIGHLIGHT_ROAD', 'HIGHLIGHT_PLACE', 'SHOW_LAYER', 'HIDE_LAYER', 'PLACE_MARKER', 'START_GPS', 'SEARCH_NUMBER'],
+    ALLOW: ['FLY_TO', 'ZOOM_TO', 'RESET_VIEW', 'SEARCH_PLACE', 'HIGHLIGHT_ROAD', 'HIGHLIGHT_PLACE', 'SHOW_LAYER', 'HIDE_LAYER', 'PLACE_MARKER', 'START_GPS', 'SEARCH_NUMBER', 'HIGHLIGHT_ADDRESSES_BY_VOIE'],
 
     execute: function(intent) {
       if (!intent || !intent.action) return { status: 'ERR', code: 'NO_ACTION' };
@@ -938,6 +938,10 @@ body {
           // Recherche d'un numéro précis dans une rue + voisins + distance
           if (!intent.st_name || !intent.numero) return { status: 'ERR', code: 'MISSING_PARAMS' };
           return TAL._searchNumber(intent.st_name, intent.numero);
+
+case 'HIGHLIGHT_ADDRESSES_BY_VOIE':
+          if (!intent.query) return { status: 'ERR', code: 'MISSING_PARAMS' };
+          return TAL._searchPlace(intent.query);
 
         case 'START_GPS':
           if (_gpsWatchId === null) { startGps(); }
