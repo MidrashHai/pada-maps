@@ -1,0 +1,67 @@
+/* Cockpit Spatial™ v4.0 · couche responsive mobile de test
+ * Le moteur reste dans le HTML et ses modules JS. Ce fichier ne gouverne que l'affichage.
+ */
+@media (max-width: 760px), (pointer: coarse) and (max-width: 1024px) {
+  html, body { min-height: 100%; height: auto; font-size: 16px; }
+  body { padding-bottom: env(safe-area-inset-bottom); }
+  .app { display: block; height: auto; min-height: 100vh; overflow: visible; }
+  .sidebar {
+    position: sticky; top: 0; z-index: 40; width: 100%; height: auto;
+    display: block; padding-top: env(safe-area-inset-top);
+  }
+  .sidebar-top { padding: .7rem 1rem .55rem; }
+  .sidebar-logo { font-size: 16px; }
+  .sidebar-sub, .sidebar-heb, .sidebar-bottom { display: none; }
+  .sidebar-nav {
+    display: flex; overflow-x: auto; overflow-y: hidden; padding: 0;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .sidebar-nav::-webkit-scrollbar { display: none; }
+  .nav-item {
+    flex: 0 0 auto; min-height: 48px; padding: .7rem .85rem;
+    border-left: 0; border-bottom: 3px solid transparent; white-space: nowrap;
+  }
+  .nav-item.active { border-left-color: transparent; border-bottom-color: var(--or); }
+  .nav-badge { display: none; }
+  .main { display: block; overflow: visible; }
+  .topbar { position: static; padding: .7rem 1rem; align-items: flex-start; gap: .5rem; }
+  .topbar-meta { display: none; }
+  .topbar-badges { max-width: 48%; }
+  .badge { font-size: 9px; }
+  .content { padding: 1rem .75rem 2rem; }
+  .sec-title { font-size: 20px; }
+  .sec-sub { font-size: 14px; }
+  .card-head, .tc-head, .dual-head { align-items: flex-start; gap: .5rem; }
+  .card-body, .tc-body, .dual-body { padding: .85rem; }
+  .grid-2, .row-2, .conn-grid, .dual-grid, .dual-notes, .dual-actions {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .mode-toggle { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .cg { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .cc { min-width: 0; padding: .65rem; }
+  .cc .cv { font-size: 14px; overflow-wrap: anywhere; }
+  .btn, .btn-reset { min-height: 48px; font-size: 15px; touch-action: manipulation; }
+  .fg input { min-height: 48px; font-size: 16px; }
+  .pipe-nodes { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .pnode { min-width: 0; }
+  .dual-title { font-size: 14px; }
+  .dual-status { overflow-wrap: anywhere; text-align: right; }
+  .dual-icl, .dual-meta, .dual-observation { overflow-wrap: anywhere; word-break: break-word; }
+  .dual-observation { font-size: 13px; line-height: 1.65; padding: .85rem; }
+  .dual-actions .btn + .btn { margin-top: 0; }
+  .tc-row { display: block; padding: .55rem 0; }
+  .tc-key, .tc-val { display: block; max-width: none; text-align: left; }
+  .tc-val { margin-top: .2rem; }
+  .lmt, .payload-wrap, .pay-code { max-width: 100%; overflow-x: auto; }
+  .ready-box, .famille-section { align-items: flex-start; }
+  .hist-modal { width: 96vw; max-height: 92vh; border-radius: 12px; }
+  .hm-head, .hm-body, .hm-footer { padding: 1rem; }
+  .hm-footer { padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 420px) {
+  .topbar-badges { display: none; }
+  .mode-toggle, .cg { grid-template-columns: minmax(0, 1fr); }
+  .pipe-nodes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .content { padding-left: .55rem; padding-right: .55rem; }
+}
