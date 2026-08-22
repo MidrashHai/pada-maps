@@ -1,0 +1,2184 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0A0A14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Cockpit Spatial™ v4.0 — Makom Intelligence</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.31.0/webfont/tabler-icons.min.css">
+<style>
+:root{
+  --nuit:#0A0A14;--or:#BA7517;--or-bg:#FAF0DC;--or-mid:#7A4A09;
+  --teal:#0F6070;--teal-bg:#E1F5EE;--teal-dk:#09404C;
+  --vert:#1D9E75;--vert-bg:#E8F8F2;
+  --rouge:#C0392B;--rouge-bg:#FDEDEC;
+  --bleu:#1A5FA8;--bleu-bg:#EAF2FC;
+  --surf:#F8F7F4;--surf2:#F0EEE8;
+  --bord:#E2E0D8;--bord2:#C8C5BA;
+  --txt:#1A1916;--txt2:#5A5850;--txt3:#9A9688;
+  --mono:'Courier New',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--surf);color:var(--txt);font-family:system-ui,-apple-system,sans-serif;font-size:14px;line-height:1.5}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:220px;flex-shrink:0;background:var(--nuit);display:flex;flex-direction:column}
+.sidebar-top{padding:1.25rem 1rem 1rem;border-bottom:1px solid rgba(255,255,255,.06)}
+.sidebar-logo{font-size:17px;font-weight:700;color:#fff;letter-spacing:-.01em;margin-bottom:2px}
+.sidebar-sub{font-size:10px;color:rgba(255,255,255,.4);letter-spacing:.05em;text-transform:uppercase}
+.sidebar-heb{font-size:15px;color:var(--or);margin-top:6px;display:block}
+.sidebar-nav{flex:1;padding:.5rem 0;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:9px;padding:.5rem 1rem;font-size:12px;color:rgba(255,255,255,.45);cursor:pointer;border-left:2px solid transparent;transition:all .15s;user-select:none}
+.nav-item i{font-size:15px;flex-shrink:0}
+.nav-item:hover{color:rgba(255,255,255,.75);background:rgba(255,255,255,.04)}
+.nav-item.active{color:#fff;background:rgba(255,255,255,.07);border-left-color:var(--or)}
+.nav-badge{margin-left:auto;font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.4)}
+.nav-item.done .nav-badge{background:rgba(29,158,117,.2);color:#4DCEA8}
+.nav-badge.grey{background:rgba(255,255,255,.06);color:rgba(255,255,255,.25)}
+.sidebar-bottom{padding:.75rem 1rem;border-top:1px solid rgba(255,255,255,.06)}
+.state-lbl{font-size:10px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.375rem}
+.state-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;padding:3px 9px;border-radius:4px;background:rgba(255,255,255,.07);color:rgba(255,255,255,.45)}
+.state-chip.computing{color:#6EB8D4;background:rgba(110,184,212,.12)}
+.state-chip.ready{color:#4DCEA8;background:rgba(77,206,168,.15)}
+.state-chip.published{color:var(--or);background:rgba(186,117,23,.15)}
+.state-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.state-chip.ready .state-dot,.state-chip.published .state-dot{animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.topbar{padding:.75rem 1.5rem;background:#fff;border-bottom:1px solid var(--bord);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:10}
+.topbar-title{font-size:14px;font-weight:600;color:var(--txt)}
+.topbar-meta{font-size:11px;color:var(--txt3)}
+.topbar-badges{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.badge{font-size:10px;font-weight:500;padding:2px 8px;border-radius:4px;letter-spacing:.03em}
+.bd{background:var(--nuit);color:#fff}
+.bt{background:var(--teal-bg);color:var(--teal)}
+.ba{background:var(--or-bg);color:var(--or-mid)}
+.bg{background:var(--vert-bg);color:var(--vert);display:none}
+.content{flex:1;padding:1.25rem 1.5rem}
+.panel{display:none}
+.panel.active{display:block}
+.sec-title{font-size:16px;font-weight:600;color:var(--txt);margin-bottom:3px}
+.sec-sub{font-size:12px;color:var(--txt2);margin-bottom:1.125rem}
+.sec-rule{height:1px;background:var(--bord);margin:.875rem 0}
+.card{background:#fff;border:1px solid var(--bord);border-radius:9px;overflow:hidden;margin-bottom:.875rem}
+.card-head{padding:.75rem 1rem;border-bottom:1px solid var(--bord);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:12px;font-weight:500;color:var(--txt)}
+.card-body{padding:1rem}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.875rem}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:.875rem}
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:.75rem}
+.fg label{font-size:11px;font-weight:500;color:var(--txt2)}
+.fg input{border:1px solid var(--bord);border-radius:7px;padding:8px 11px;font-size:14px;color:var(--txt);background:var(--surf);width:100%;font-variant-numeric:tabular-nums;transition:border-color .15s}
+.fg input:focus{outline:none;border-color:var(--teal);background:#fff}
+.fg input.er{border-color:var(--rouge)}
+.fh{font-size:11px;color:var(--txt3)}
+.em{font-size:11px;color:var(--rouge);display:none;margin-top:2px}
+.btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid transparent;transition:all .15s;width:100%}
+.btn+.btn{margin-top:7px}
+.btn-p{background:var(--teal);color:#fff;border-color:var(--teal)}
+.btn-p:hover{background:var(--teal-dk)}
+.btn-p:disabled{opacity:.35;cursor:not-allowed}
+.btn-g{background:transparent;color:var(--teal);border-color:var(--bord2)}
+.btn-g:hover:not(:disabled){background:var(--teal-bg);border-color:var(--teal)}
+.btn-g:disabled{opacity:.35;cursor:not-allowed}
+.btn i{font-size:15px}
+.gps-card{background:#fff;border:1px solid var(--bord);border-radius:9px;padding:1rem;margin-bottom:.75rem}
+.gps-row{display:flex;align-items:center;gap:8px}
+.gdot{width:8px;height:8px;border-radius:50%;background:var(--bord2);flex-shrink:0;transition:all .3s}
+.gdot.ok{background:var(--vert);box-shadow:0 0 0 3px rgba(29,158,117,.2)}
+.gdot.er{background:var(--rouge)}
+.gps-lbl{font-size:12px;color:var(--txt2)}
+.cg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:.75rem}
+.cc{background:var(--surf2);border:1px solid var(--bord);border-radius:7px;padding:.5rem .625rem}
+.cc .cl{font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.cc .cv{font-size:12px;font-weight:500;color:var(--txt);font-variant-numeric:tabular-nums}
+.gerr{font-size:12px;color:var(--rouge);margin-top:.5rem;display:none}
+.mode-toggle{display:grid;grid-template-columns:1fr 1fr;gap:.625rem;margin-bottom:.875rem}
+.pipe-wrap{margin-bottom:.875rem}
+.pipe-lbl{font-size:10px;font-weight:500;color:var(--txt3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;display:flex;align-items:center;gap:5px}
+.pipe-nodes{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:.5rem}
+.pnode{background:var(--surf2);border:1px solid var(--bord);border-radius:7px;padding:.5rem .25rem;text-align:center;transition:all .2s}
+.pnode.act{border-color:var(--teal);background:var(--teal-bg)}
+.pnode.dn{border-color:#9FE1CB;background:var(--vert-bg)}
+.pnode.er{border-color:var(--rouge);background:var(--rouge-bg)}
+.pn{font-size:10px;font-weight:600;color:var(--txt3);letter-spacing:.03em}
+.pnode.act .pn{color:var(--teal)}
+.pnode.dn .pn{color:var(--vert)}
+.pnode.er .pn{color:var(--rouge)}
+.ps{font-size:9px;color:var(--txt3);margin-top:2px}
+.pnode.dn .ps{color:var(--vert)}
+.prog-bar{height:2px;background:var(--bord);border-radius:2px;overflow:hidden}
+.prog-in{height:100%;background:var(--teal);border-radius:2px;width:0;transition:width .4s}
+.seq-row{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:.625rem 0}
+.spill{background:var(--bleu-bg);color:var(--bleu);border:1px solid rgba(26,95,168,.2);border-radius:20px;padding:2px 9px;font-size:11px;font-weight:500}
+.sarr{font-size:10px;color:var(--txt3)}
+.lmt{width:100%;border-collapse:collapse;font-size:11px}
+.lmt th{font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;padding:4px 7px;text-align:left;border-bottom:1px solid var(--bord);font-weight:500}
+.lmt td{padding:4px 7px;color:var(--txt2);border-bottom:1px solid var(--bord)}
+.lmt tr.on td{color:var(--teal);background:var(--teal-bg);font-weight:500}
+.fl-bloc{background:var(--surf);border:1px solid var(--bord);border-radius:8px;padding:.75rem .875rem;margin-bottom:.5rem;transition:all .2s}
+.fl-bloc.act{border-color:var(--teal);background:var(--bleu-bg)}
+.fl-bloc.dn{border-color:#9FE1CB;background:var(--vert-bg)}
+.fl-num{font-size:10px;font-weight:500;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.fl-bloc.act .fl-num{color:var(--teal)}
+.fl-bloc.dn .fl-num{color:var(--vert)}
+.fl-name{font-size:12px;font-weight:500;color:var(--txt);margin-bottom:3px}
+.fl-txt{font-size:11px;color:var(--txt2);line-height:1.5;white-space:pre-line}
+
+/* SHEM TRIPLE */
+.shem-triple{background:#fff;border:1px solid var(--bord);border-radius:10px;padding:1.25rem;margin:.875rem 0}
+.shem-triple-head{margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid var(--bord)}
+.shem-heb{font-size:26px;font-weight:500;color:var(--or);direction:rtl;display:block;margin-bottom:.25rem}
+.shem-lat{font-size:16px;font-weight:500;color:var(--txt);display:block;margin-bottom:.375rem}
+.shem-sub{font-size:11px;color:var(--txt3)}
+.shem-layers{display:flex;flex-direction:column;gap:.625rem}
+.shem-layer{background:var(--surf);border:1px solid var(--bord);border-radius:8px;padding:.875rem 1rem}
+.sl-badge{display:inline-block;font-size:9px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;padding:2px 8px;border-radius:3px;margin-bottom:.625rem}
+.sl-makom{background:var(--or-bg);color:var(--or-mid)}
+.sl-shaar{background:var(--teal-bg);color:var(--teal)}
+.sl-mishkan{background:var(--vert-bg);color:var(--vert)}
+.sl-heb{font-size:18px;font-weight:500;direction:rtl;display:block;margin-bottom:3px;text-align:right}
+.sl-heb-txt{font-size:18px;font-weight:500;direction:rtl;display:block;margin-bottom:3px;text-align:right}
+.sl-lat{font-size:14px;font-weight:600;color:var(--txt);display:block;margin-bottom:3px}
+.sl-fr{font-size:12px;color:var(--txt2)}
+.sl-sig{font-size:11px;color:var(--txt3);margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--bord);font-style:italic;line-height:1.55}
+.shem-sig{font-size:13px;color:var(--txt2);line-height:1.65;margin-top:.875rem;padding-top:.875rem;border-top:1px solid var(--bord);text-align:left;font-style:italic;max-width:520px;margin-left:auto;margin-right:auto}
+.ep-row{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-start;margin-top:.875rem}
+.icl-block{background:var(--surf2);border:1px solid var(--bord);border-radius:8px;padding:.875rem 1rem;margin-top:.875rem;text-align:left}
+.icl-row{padding:.375rem 0;border-bottom:1px solid var(--bord);display:flex;flex-direction:column;gap:3px}
+.icl-row:last-child{border:none}
+.icl-lbl{font-size:10px;font-weight:500;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em}
+.icl-val{font-size:12px;color:var(--txt2);line-height:1.5}
+.shem-portee{background:var(--surf2);border:1px solid var(--bord);border-radius:8px;padding:.875rem 1rem;margin-top:.875rem;text-align:left;font-size:12px;color:var(--txt3);line-height:1.6}
+.shem-portee-lbl{display:block;font-size:10px;font-weight:500;color:var(--txt3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem}
+.hist-item{background:var(--surf);border:1px solid var(--bord);border-radius:8px;padding:.875rem 1rem;margin-bottom:.625rem;cursor:pointer;transition:border-color .15s,background .15s}
+.hist-item:hover{border-color:var(--teal);background:var(--teal-bg)}
+.btn-reset{display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--bord2);background:transparent;color:var(--txt2);transition:all .15s;width:100%;margin-top:7px}
+.btn-reset:hover{background:var(--surf2);border-color:var(--bord2);color:var(--txt)}
+.hist-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.hist-modal-overlay.vis{opacity:1;pointer-events:auto}
+.hist-modal{background:#fff;border-radius:14px;width:min(680px,92vw);max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.hm-head{padding:1.25rem 1.5rem;border-bottom:1px solid var(--bord);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1}
+.hm-title-heb{font-size:22px;font-weight:500;color:var(--or);direction:rtl}
+.hm-title-lat{font-size:16px;font-weight:600;color:var(--txt);margin-top:2px}
+.hm-close{width:32px;height:32px;border-radius:50%;border:1px solid var(--bord);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--txt2);flex-shrink:0}
+.hm-close:hover{background:var(--surf2)}
+.hm-body{padding:1.5rem}
+.hm-lot{margin-bottom:1.25rem}
+.hm-lot:last-child{margin-bottom:0}
+.hm-lot-lbl{font-size:10px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;display:flex;align-items:center;gap:6px}
+.hm-lot-n{width:18px;height:18px;border-radius:50%;background:var(--nuit);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hm-lot-val{font-size:13px;color:var(--txt2);line-height:1.6;padding:.75rem 1rem;background:var(--surf2);border-radius:8px}
+.hm-lot-val.dark{background:var(--nuit);color:rgba(255,255,255,.7);font-style:italic}
+.hm-lot-val.grey{background:#1A1A28;color:rgba(255,255,255,.35);font-size:12px}
+.hm-footer{padding:1rem 1.5rem;border-top:1px solid var(--bord);display:flex;gap:.625rem}
+.hm-meta{font-size:11px;color:var(--txt3);font-family:var(--mono)}
+.hist-heb{font-size:18px;font-weight:500;color:var(--or);direction:rtl;margin-bottom:2px}
+.hist-lat{font-size:14px;font-weight:500;color:var(--txt);margin-bottom:3px}
+.hist-meta{font-size:11px;color:var(--txt3);font-family:var(--mono);margin-bottom:3px}
+.hist-mouv{font-size:11px;color:var(--txt2)}
+.ep{font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px}
+.eq{background:var(--teal-bg);color:var(--teal)}
+.ee{background:var(--or-bg);color:var(--or-mid)}
+.tc-card{background:#F5F4F1;border:1px solid var(--bord);border-radius:10px;overflow:hidden;margin-bottom:.875rem}
+.tc-head{padding:.875rem 1.125rem;border-bottom:1px solid var(--bord);display:flex;align-items:center;justify-content:space-between}
+.tc-title{font-size:13px;font-weight:600;color:var(--txt)}
+.tc-ready{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:500;color:var(--vert)}
+.tc-dot{width:6px;height:6px;border-radius:50%;background:var(--vert);animation:pulse 1.4s infinite}
+.tc-body{padding:.875rem 1.125rem}
+.tc-row{display:flex;justify-content:space-between;align-items:baseline;padding:.3rem 0;border-bottom:1px solid var(--bord)}
+.tc-row:last-child{border:none}
+.tc-key{font-size:10px;color:var(--txt2);font-family:var(--mono)}
+.tc-val{font-size:11px;color:var(--txt);font-family:var(--mono);text-align:right;max-width:65%;word-break:break-all}
+.tc-val.accent{color:var(--or-mid)}
+.tc-val.teal{color:var(--teal-dk)}
+.tc-val.ep{color:var(--bleu)}
+.ready-box{background:var(--vert-bg);border:1px solid rgba(29,158,117,.25);border-radius:9px;padding:1rem 1.125rem;display:flex;align-items:center;gap:.75rem}
+.ready-box i{font-size:22px;color:var(--vert);flex-shrink:0}
+.ready-title{font-size:13px;font-weight:600;color:var(--vert);margin-bottom:2px}
+.ready-sub{font-size:11px;color:var(--txt2)}
+.conn-grid{display:grid;grid-template-columns:1fr 1fr;gap:.625rem}
+.conn-card{background:#fff;border:1px solid var(--bord);border-radius:9px;padding:.875rem;display:flex;align-items:center;justify-content:space-between}
+.conn-left{display:flex;align-items:center;gap:.5rem}
+.conn-icon{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.ci-teal{background:var(--teal-bg);color:var(--teal)}
+.ci-gris{background:var(--surf2);color:var(--txt3)}
+.conn-name{font-size:12px;font-weight:500;color:var(--txt)}
+.conn-desc{font-size:10px;color:var(--txt3)}
+.cs{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:500}
+.cs-dot{width:6px;height:6px;border-radius:50%}
+.cs-on{color:var(--vert)}
+.cs-on .cs-dot{background:var(--vert);animation:pulse 1.4s infinite}
+.cs-wait{color:var(--or)}
+.cs-wait .cs-dot{background:var(--or)}
+.cs-off{color:var(--txt3)}
+.cs-off .cs-dot{background:var(--txt3)}
+.payload-wrap{background:var(--nuit);border-radius:9px;overflow:hidden;margin-top:.875rem}
+.pay-bar{padding:.5rem .875rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.07)}
+.pay-lbl{font-size:10px;font-weight:500;color:rgba(255,255,255,.4);font-family:var(--mono)}
+.pay-acts{display:flex;gap:6px}
+.pay-btn{font-size:10px;color:rgba(255,255,255,.45);background:rgba(255,255,255,.07);border:none;border-radius:5px;padding:3px 9px;cursor:pointer;font-family:var(--mono)}
+.pay-btn:hover{background:rgba(255,255,255,.12);color:#fff}
+.pay-code{padding:1rem .875rem;font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.7);line-height:1.7;overflow-x:auto;white-space:pre;max-height:320px;overflow-y:auto}
+.dual-card{margin-top:.875rem;border:1px solid #C8B8E8;border-radius:10px;overflow:hidden;background:#fff}
+.dual-head{padding:.75rem 1rem;background:linear-gradient(135deg,#F0E8FA,#EAF2FC);border-bottom:1px solid #C8B8E8;display:flex;align-items:center;justify-content:space-between;gap:.75rem}
+.dual-title{font-size:12px;font-weight:700;color:#6B3FA0}
+.dual-status{font-size:10px;font-family:var(--mono);color:#6B3FA0}
+.dual-body{padding:1rem}
+.dual-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.dual-notes{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.75rem}
+.dual-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-top:.75rem}
+.dual-engine{border:1px solid var(--bord);border-radius:8px;padding:.75rem;background:var(--surf)}
+.dual-engine.new{border-color:#C8B8E8;background:#F8F4FF}
+.dual-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);margin-bottom:.375rem}
+.dual-icl{font-size:14px;font-weight:700;font-family:var(--mono);color:var(--teal);margin-bottom:.375rem}
+.dual-engine.new .dual-icl{color:#6B3FA0}
+.dual-meta{font-size:10px;color:var(--txt2);line-height:1.55}
+.dual-observation{margin-top:.75rem;padding:.75rem;border-radius:8px;background:var(--nuit);color:rgba(255,255,255,.72);font-size:11px;line-height:1.6}
+.dual-observation strong{color:#fff}
+@media(max-width:760px){.dual-grid,.dual-notes,.dual-actions{grid-template-columns:1fr}}
+.pay-key{color:#79B8FF}
+.pay-str{color:#9ECBFF}
+.pay-num{color:#F8C555}
+.pay-bool{color:#85E89D}
+.pay-null{color:#F97583}
+.note{background:var(--or-bg);border-left:3px solid var(--or);border-radius:0 7px 7px 0;padding:.625rem .875rem;font-size:11px;color:var(--txt2);line-height:1.55;margin:.75rem 0}
+.note strong{color:var(--or-mid)}
+.mini-lbl{font-size:10px;font-weight:500;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.375rem;display:flex;align-items:center;gap:5px}
+.mini-badge{font-size:9px;padding:1px 6px;border-radius:3px}
+/* v2.0 tag */
+.v2-badge{background:rgba(186,117,23,.15);color:var(--or);border:1px solid rgba(186,117,23,.3);border-radius:4px;font-size:9px;font-weight:700;padding:1px 6px;letter-spacing:.05em}
+/* Grande Famille · section dédiée · second plan structurel */
+.famille-section{background:var(--surf2);border:1px solid var(--bord);border-radius:8px;padding:.75rem 1rem;margin-bottom:.875rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.famille-left{flex:1;min-width:0}
+.famille-lbl{font-size:9px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+.famille-shem-lat{font-size:12px;font-weight:600;color:var(--txt2)}
+.famille-shem-fr{font-size:11px;color:var(--txt3);margin-top:1px}
+.famille-shem-sig{font-size:10px;color:var(--txt3);font-style:italic;margin-top:3px;line-height:1.45}
+.famille-right{text-align:right;flex-shrink:0}
+.famille-heb{font-size:15px;font-weight:500;color:var(--txt3);direction:rtl}
+.famille-paire{font-size:10px;color:var(--txt3);margin-top:2px;font-family:var(--mono)}
+.hazakah-tag{font-size:9px;color:var(--or-mid);background:var(--or-bg);border:1px solid rgba(186,117,23,.2);border-radius:3px;padding:1px 6px;margin-left:4px;vertical-align:middle}
+.famille-band{display:flex;align-items:baseline;gap:.5rem;flex-wrap:wrap;margin-bottom:.875rem}
+.famille-val{font-size:11px;font-weight:500;color:var(--txt3)}
+.famille-fr{font-size:11px;color:var(--txt3);font-style:italic}
+</style>
+<link rel="stylesheet" href="cockpit-spatial-mobile-v4.css">
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-top">
+    <div class="sidebar-logo">Cockpit Spatial™ v4.0</div>
+    <div class="sidebar-sub">Makom Intelligence · <span class="v2-badge">LABORATOIRE</span></div>
+    <span class="sidebar-heb">שֵׁם הַמָּקוֹם</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" data-panel="localisation" onclick="goPanel('localisation',this)">
+      <i class="ti ti-map-pin"></i><span>Localisation</span>
+      <span class="nav-badge" id="nb1">—</span>
+    </div>
+    <div class="nav-item" data-panel="referentiel" onclick="goPanel('referentiel',this)">
+      <i class="ti ti-fingerprint"></i><span>Référentiel</span>
+      <span class="nav-badge" id="nb2">—</span>
+    </div>
+    <div class="nav-item" data-panel="fl301" onclick="goPanel('fl301',this)">
+      <i class="ti ti-writing"></i><span>FL-301™</span>
+      <span class="nav-badge" id="nb3">—</span>
+    </div>
+    <div class="nav-item" data-panel="territorial" onclick="goPanel('territorial',this)">
+      <i class="ti ti-world"></i><span>TerritorialContext™</span>
+      <span class="nav-badge" id="nb4">—</span>
+    </div>
+    <div class="nav-item" data-panel="connectivite" onclick="goPanel('connectivite',this)">
+      <i class="ti ti-plug-connected"></i><span>Connectivité</span>
+      <span class="nav-badge" id="nb5">—</span>
+    </div>
+  </nav>
+  <div class="sidebar-bottom">
+    <div class="state-lbl">État système</div>
+    <div class="state-chip" id="state-chip">
+      <div class="state-dot"></div>
+      <span id="state-txt">INITIALIZED</span>
+    </div>
+    <button onclick="resetAll()" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:.625rem;padding:7px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:rgba(255,255,255,.55);font-size:11px;font-weight:500;cursor:pointer;transition:all .15s" onmouseover="this.style.background='rgba(255,255,255,.1)';this.style.color='rgba(255,255,255,.85)'" onmouseout="this.style.background='rgba(255,255,255,.06)';this.style.color='rgba(255,255,255,.55)'">
+      <i class="ti ti-refresh" style="font-size:13px"></i> Nouvelle génération
+    </button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="tb-title">Localisation · Acquisition des coordonnées</div>
+      <div class="topbar-meta" id="tb-meta">Panneau 1 de 5 · STE™ point d'entrée</div>
+    </div>
+    <div class="topbar-badges">
+      <span class="badge bd">Codex v3.1</span>
+      <span class="badge bt">ICL PCNT™ v3.1</span>
+      <span class="badge ba">EXP™</span>
+      <span class="badge bg" id="tb-ready">READY</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ═══ PANNEAU 1 · LOCALISATION ═══ -->
+    <div class="panel active" id="panel-localisation">
+      <div class="sec-title">Acquisition des coordonnées</div>
+      <div class="sec-sub">Point d'entrée du pipeline STE™ · deux modes · Dalet-Dalet</div>
+
+      <div class="card" style="margin-bottom:.875rem;border-color:#d7c5f5;background:#faf7ff">
+        <div class="card-head"><span class="card-title">Destination OmeH.ai · facultative</span><span class="badge" style="background:#eee5fb;color:#6b3fa0;font-size:10px">UNE PRISE GPS → CIBLE PADA</span></div>
+        <div class="card-body"><div class="grid-2">
+          <div class="fg"><label for="idestnum">Numéro de destination</label><input id="idestnum" inputmode="numeric" placeholder="ex. 99"></div>
+          <div class="fg"><label for="ideststreet">Rue de destination</label><input id="ideststreet" placeholder="ex. Rue Tano Atchimon"></div>
+        </div><span class="fh">La destination est comparée à la prise GPS unique en parallèle du résolveur territorial historique.</span></div>
+      </div>
+
+      <div class="mode-toggle">
+        <button class="btn btn-g" id="btn-mode-gps" onclick="switchMode('gps')">
+          <i class="ti ti-current-location"></i> Position GPS en direct
+        </button>
+        <button class="btn btn-p" id="btn-mode-manual" onclick="switchMode('manual')">
+          <i class="ti ti-map-pin"></i> Saisie manuelle
+        </button>
+      </div>
+
+      <!-- GPS mode -->
+      <div id="mode-gps" style="display:none">
+        <div class="gps-card">
+          <div class="gps-row">
+            <div class="gdot" id="gdot"></div>
+            <span class="gps-lbl" id="gst">Position non acquise</span>
+          </div>
+          <div class="cg" id="gcoords" style="display:none">
+            <div class="cc"><div class="cl">Latitude</div><div class="cv" id="glat">—</div></div>
+            <div class="cc"><div class="cl">Longitude</div><div class="cv" id="glon">—</div></div>
+            <div class="cc"><div class="cl">Précision</div><div class="cv" id="gacc">—</div></div>
+            <div class="cc"><div class="cl">Statut</div><div class="cv" style="color:var(--vert)">QTSE™</div></div>
+          </div>
+          <div class="gerr" id="gerr"></div>
+        </div>
+        <button class="btn btn-p" id="btn-gps" onclick="locateMe()">
+          <i class="ti ti-current-location"></i> Acquérir ma position
+        </button>
+        <button class="btn btn-g" id="btn-vg" onclick="launch('gps')" disabled style="margin-top:7px">
+          Valider · lancer le pipeline ↗
+        </button>
+        <button class="btn-reset" id="btn-reset-gps" onclick="resetAll()">
+          <i class="ti ti-refresh"></i> Nouvelle génération
+        </button>
+      </div>
+
+      <!-- Manual mode -->
+      <div id="mode-manual">
+        <div class="card">
+          <div class="card-head"><span class="card-title">Coordonnées décimales</span></div>
+          <div class="card-body">
+            <div class="grid-2">
+              <div class="fg">
+                <label for="ilat">Latitude</label>
+                <input type="number" id="ilat" step="0.0000001" min="-90" max="90" placeholder="ex. 5.3858250">
+                <span class="fh">Entre -90 et 90 · 7 décimales obligatoires</span>
+                <span class="em" id="elat">Valeur hors bornes (-90 à 90)</span>
+              </div>
+              <div class="fg">
+                <label for="ilon">Longitude</label>
+                <input type="number" id="ilon" step="0.0000001" min="-180" max="180" placeholder="ex. -3.9530860">
+                <span class="fh">Entre -180 et 180 · négatif = Ouest</span>
+                <span class="em" id="elon">Valeur hors bornes (-180 à 180)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-p" onclick="previewManual()">
+          <i class="ti ti-eye"></i> Vérifier les coordonnées
+        </button>
+        <button class="btn btn-g" id="btn-vm" onclick="launch('manual')" disabled style="margin-top:7px">
+          Valider · lancer le pipeline ↗
+        </button>
+        <button class="btn-reset" id="btn-reset-manual" onclick="resetAll()">
+          <i class="ti ti-refresh"></i> Nouvelle génération · vider les champs
+        </button>
+      </div>
+
+      <div class="note"><strong>Codex Shem haMakomot v3.1 · ICL PCNT™ v3.1</strong> · Pondération exponentielle droite→gauche · Trois Shem dégagés : Makom (ouverture Lat) · Sha'ar (ouverture Lon) · Mishkan (clôture Lat + clôture Lon · ce que le lieu accomplit) · + Graine du Lieu. <strong>Loi des coordonnées : conservation et calcul obligatoires sur 7 décimales.</strong></div>
+    </div>
+
+    <!-- ═══ PANNEAU 2 · RÉFÉRENTIEL ═══ -->
+    <div class="panel" id="panel-referentiel">
+      <div class="sec-title">Référentiel Territorial™</div>
+      <div class="sec-sub">Résultat déterministe · STE™ + STR™ + CTS™ · Codex v3.1</div>
+
+      <div class="pipe-wrap">
+        <div class="pipe-lbl"><i class="ti ti-route" style="font-size:12px"></i> Pipeline STE™</div>
+        <div class="pipe-nodes">
+          <div class="pnode" id="pste"><div class="pn">STE™</div><div class="ps">Entiers</div></div>
+          <div class="pnode" id="pstr"><div class="pn">STR™</div><div class="ps">Décimales</div></div>
+          <div class="pnode" id="pcts"><div class="pn">CTS™</div><div class="ps">Doubles</div></div>
+          <div class="pnode" id="pfl"><div class="pn">FL-301™</div><div class="ps">3 Shem</div></div>
+          <div class="pnode" id="ptc"><div class="pn">TC™</div><div class="ps">Context</div></div>
+          <div class="pnode" id="papi"><div class="pn">API</div><div class="ps">Makom™</div></div>
+          <div class="pnode" id="ppub"><div class="pn">PUB</div><div class="ps">Publication</div></div>
+        </div>
+        <div class="prog-bar"><div class="prog-in" id="prog-main"></div></div>
+      </div>
+
+      <div id="ref-content">
+        <div style="text-align:center;padding:2rem;color:var(--txt3)">
+          <i class="ti ti-radar" style="font-size:28px;display:block;margin-bottom:.5rem"></i>
+          En attente des coordonnées
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PANNEAU 3 · FL-301 ═══ -->
+    <div class="panel" id="panel-fl301">
+      <div class="sec-title">FL-301™ · Nomination Engine™</div>
+      <div class="sec-sub">Trois Shem séquentiels : Makom · Sha'ar · Mishkan · six tests FL-301</div>
+      <div id="fl-content">
+        <div style="text-align:center;padding:2rem;color:var(--txt3)">
+          <i class="ti ti-writing" style="font-size:28px;display:block;margin-bottom:.5rem"></i>
+          En attente du Référentiel Territorial™
+        </div>
+      </div>
+
+      <div class="sec-rule" style="margin-top:1.5rem"></div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:.75rem">
+        <div style="font-size:14px;font-weight:600;color:var(--txt)">Historique de session</div>
+        <div style="font-size:11px;color:var(--txt3)" id="hist-count">0 Shem généré</div>
+      </div>
+      <div id="history-wrap">
+        <div style="text-align:center;padding:1.5rem;color:var(--txt3);font-size:12px">Aucun Shem généré dans cette session</div>
+      </div>
+    </div>
+
+    <!-- ═══ PANNEAU 4 · TERRITORIAL CONTEXT ═══ -->
+    <div class="panel" id="panel-territorial">
+      <div class="sec-title">TerritorialContext™</div>
+      <div class="sec-sub">Sortie officielle · double moteur ICL · publiable via les futures API territoriales du Cockpit Spatial™</div>
+      <div id="tc-content">
+        <div style="text-align:center;padding:2rem;color:var(--txt3)">
+          <i class="ti ti-world" style="font-size:28px;display:block;margin-bottom:.5rem"></i>
+          En attente de FL-301™
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PANNEAU 5 · CONNECTIVITÉ ═══ -->
+    <div class="panel" id="panel-connectivite">
+      <div class="sec-title">Connectivité · Moteurs consommateurs</div>
+      <div class="sec-sub">Laboratoire et fournisseur de données territoriales par API pour Maps.pada.ci, OmeH.ai, haDibbur et GanH.ai</div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">API territoriales du Cockpit Spatial™ · Interface d'interconnexion</span>
+          <span class="cs cs-on"><div class="cs-dot"></div> Disponible</span>
+        </div>
+        <div class="card-body">
+          <div style="font-size:11px;color:var(--txt2);margin-bottom:.75rem">
+            Contrat territorial actuel · <span style="font-family:var(--mono);color:var(--teal)">POST /api/v1/makom/context</span>
+          </div>
+          <div class="conn-grid">
+            <div class="conn-card">
+              <div class="conn-left">
+                <div class="conn-icon ci-teal"><i class="ti ti-clock"></i></div>
+                <div><div class="conn-name">Maps.pada.ci</div><div class="conn-desc">Carte territoriale · agent conversationnel pour les résidents</div></div>
+              </div>
+              <div class="cs cs-wait" id="cs-maps-pada"><div class="cs-dot"></div> En attente</div>
+            </div>
+            <div class="conn-card">
+              <div class="conn-left">
+                <div class="conn-icon ci-gris"><i class="ti ti-id-badge"></i></div>
+                <div><div class="conn-name">OmeH.ai</div><div class="conn-desc">Guidage et orientation · agent territorial embarqué</div></div>
+              </div>
+              <div class="cs cs-off"><div class="cs-dot"></div> Non connecté</div>
+            </div>
+            <div class="conn-card">
+              <div class="conn-left">
+                <div class="conn-icon ci-gris"><i class="ti ti-heart"></i></div>
+                <div><div class="conn-name">haDibbur</div><div class="conn-desc">Espace conversationnel territorial · agent situé</div></div>
+              </div>
+              <div class="cs cs-off"><div class="cs-dot"></div> Non connecté</div>
+            </div>
+            <div class="conn-card">
+              <div class="conn-left">
+                <div class="conn-icon ci-gris"><i class="ti ti-clock"></i></div>
+                <div><div class="conn-name">GanH.ai</div><div class="conn-desc">Horloge du Souffle · contexte temporel territorial</div></div>
+              </div>
+              <div class="cs cs-off"><div class="cs-dot"></div> Non connecté</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">Cockpit Spatial™ v4.0 · Territorial API Hub</span>
+          <span class="badge" style="background:var(--surf2);color:var(--txt3);font-size:10px">LAB → API</span>
+        </div>
+        <div class="card-body">
+          <div style="font-family:var(--mono);font-size:11px;color:var(--txt2);line-height:1.8">
+            Mesures terrain + PADA + Zera + double moteur ICL<br>
+            <span style="color:var(--bord2)">─────────────────────────</span><br>
+            → <span style="color:var(--teal);font-weight:600">TerritorialContext™ versionné et distribuable</span><br>
+            → Maps.pada.ci · OmeH.ai · haDibbur · GanH.ai
+          </div>
+          <div class="note" style="margin-top:.75rem">
+            <strong>Découplage</strong> · Le laboratoire calcule, compare, qualifie et publie. Chaque projet consommateur utilise le contexte territorial sans embarquer la logique interne des moteurs.
+          </div>
+        </div>
+      </div>
+
+      <div class="payload-wrap">
+        <div class="pay-bar">
+          <span class="pay-lbl">TerritorialContext™ · Payload JSON · double moteur ICL</span>
+          <div class="pay-acts">
+            <button class="pay-btn" onclick="copyPayload()">Copier</button>
+            <button class="pay-btn" onclick="dlPayload()">Exporter .json</button>
+            <button class="pay-btn" onclick="downloadObservedPointReadable()">Fiche observée imprimable</button>
+            <button class="pay-btn" onclick="downloadTraversedPointsReadable()">Fiches traversées imprimables</button>
+          </div>
+        </div>
+        <div class="pay-code" id="payload-display">En attente du TerritorialContext™...</div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+</div>
+
+<script src="territorial-anchor-data-v0.1.js"></script>
+<script src="zera-fixed-coordinate-registry-v0.1.js"></script>
+<script src="zera-address-domain-overrides-v0.1.js"></script>
+<script src="zera-address-domain-registry-v0.1.js"></script>
+<script src="territorial-anchor-resolver-v0.3.js"></script>
+<script src="omeh-destination-proximity-resolver-v0.1.js"></script>
+<script src="qedimah-territorial-potential-v0.1.js"></script>
+<script>
+// ── TABLE CANONIQUE · Codex Shem haMakomot v3.1 ──────────────────────────────
+const LM=[
+  {n:0,let:'Ayin',heb:'ע',mv:'Vision intérieure · voit ce qui est invisible · qualifie depuis sa position'},
+  {n:1,let:'Aleph',heb:'א',mv:'Origine · souffle premier · ce qui précède toute forme'},
+  {n:2,let:'Beit',heb:'ב',mv:'Demeure · ce qui contient · structure intérieure'},
+  {n:3,let:'Gimel',heb:'ג',mv:'Mouvement vers l\'autre · propulsion · don'},
+  {n:4,let:'Dalet',heb:'ד',mv:'Seuil · porte · ce qui s\'ouvre'},
+  {n:5,let:'He',heb:'ה',mv:'Souffle · ouverture · révélation dans le monde'},
+  {n:6,let:'Vav',heb:'ו',mv:'Axe · lien · descente · connexion'},
+  {n:7,let:'Zayin',heb:'ז',mv:'Acte inscrit · coupure juste · ce qui distingue'},
+  {n:8,let:'Het',heb:'ח',mv:'Clôture vivante · espace protégé · souffle contenu'},
+  {n:9,let:'Tet',heb:'ט',mv:'Bien caché · gestation · ce qui est bon avant d\'être visible'}
+];
+
+// ── CODEX DES DOUBLES · Shaon haRuah · Sélection opératoire v2.0 ─────────────
+const CODEX_DOUBLES={
+  // Homogènes
+  '00':'Vision matricielle','11':'Connexion matricielle','22':'Habitation du Souffle',
+  '33':'Propulsion','44':'Porte derrière la Porte','55':'Incarnation',
+  '66':'Connexion profonde / Intime','77':'Nouveau territoire','88':'Matrice vivante','99':'Bien caché révélé',
+  // Hétérogènes corpus v2.0
+  '51':'Construction fonctionnelle','12':'Connexion fonctionnelle','14':'Yad · main de l\'action',
+  '16':'Maîtrise','18':'Vie intégrée','24':'Direction du passage','23':'Lev · stabilisation intérieure',
+  '27':'Shem · identité','48':'Double porte','42':'Direction du passage','40':'Alignement',
+  '32':'Lev · stabilisation intérieure','29':'Force de la main','34':'Mouvement vers le Seuil',
+  '49':'Seuil · Gestation'
+};
+
+// Hazakah triples v2.0
+const HAZAKAH_TRIPLES={
+  '441':'Porte derrière la Porte · Origine · lieux à double seuil avant l\'Origine',
+  '530':'Souffle révélé en mouvement · lieux de traversée révélatrice',
+  '531':'Souffle révélé en mouvement vers l\'Origine · traversée constituante'
+};
+
+// ── SHEM DE FAMILLE · Traduction des paires d'entiers en nom hébreu constitué ─
+// Structure : [He-Lat][He-Lon] → Shem
+const SHEM_FAMILLE={
+  // Corpus canonique v2.0
+  '53':{heb:'מִשְׁפַּחַת הֵא·גִּימֶל',lat:'Mishpahat He·Gimel',fr:'Famille du Souffle révélé en mouvement',sig:'Le Souffle ne s\'installe pas dans ces lieux · il traverse en se révélant'},
+  '44':{heb:'מִשְׁפַּחַת דָּלֶת·דָּלֶת',lat:'Mishpahat Dalet·Dalet',fr:'Famille du Double Seuil',sig:'Tous les lieux de cette famille sont constitués d\'un double passage'},
+  '41':{heb:'מִשְׁפַּחַת דָּלֶת·אָלֶף',lat:'Mishpahat Dalet·Aleph',fr:'Famille du Seuil vers l\'Origine',sig:'L\'Origine n\'est pas immédiatement accessible · deux seuils doivent être franchis'},
+  '55':{heb:'מִשְׁפַּחַת הֵא·הֵא',lat:'Mishpahat He·He',fr:'Famille de la Double Révélation',sig:'Tous les lieux de cette famille sont dans le registre de ce qui se montre doublement'},
+  '53':{heb:'מִשְׁפַּחַת הֵא·גִּימֶל',lat:'Mishpahat He·Gimel',fr:'Famille du Souffle en Mouvement',sig:'Le Souffle se révèle en traversant · ces lieux ne retiennent pas'},
+  '35':{heb:'מִשְׁפַּחַת גִּימֶל·הֵא',lat:'Mishpahat Gimel·He',fr:'Famille du Mouvement vers la Révélation',sig:'Le mouvement mène à la révélation · ce qui circule ici se dévoile en arrivant'},
+  '33':{heb:'מִשְׁפַּחַת גִּימֶל·גִּימֶל',lat:'Mishpahat Gimel·Gimel',fr:'Famille de la Double Propulsion',sig:'Ce qui entre dans ces lieux reçoit une double impulsion · le mouvement est leur nature'},
+  '86':{heb:'מִשְׁפַּחַת חֵת·וָו',lat:'Mishpahat Het·Vav',fr:'Famille de l\'Abri Connecté',sig:'L\'espace protégé relie · ces lieux sont des abris qui transmettent'},
+  '68':{heb:'מִשְׁפַּחַת וָו·חֵת',lat:'Mishpahat Vav·Het',fr:'Famille de la Connexion Abritée',sig:'La connexion trouve ici son espace de protection'},
+  '39':{heb:'מִשְׁפַּחַת גִּימֶל·טֵת',lat:'Mishpahat Gimel·Tet',fr:'Famille du Mouvement vers le Secret',sig:'Le mouvement mène ici vers ce qui est encore invisible · ces lieux portent ce qui mûrit'},
+};
+
+function genShemFamille(latEntierSeq,lonEntierSeq,famLatParts,famLonParts,famHazakah){
+  // Clé depuis les premiers chiffres des entiers (lettre dominante de chaque coordonnée)
+  const kLat=String(latEntierSeq[latEntierSeq.length-1]); // dernier chiffre = unité dominante
+  const kLon=String(lonEntierSeq[lonEntierSeq.length-1]);
+  const key=kLat+kLon;
+  
+  if(SHEM_FAMILLE[key]) return SHEM_FAMILLE[key];
+
+  // Génération dynamique depuis les mouvements lus
+  const letLat=LM[parseInt(kLat)];
+  const letLon=LM[parseInt(kLon)];
+  const famLatStr=latEntierSeq.map(n=>LM[n].let).join('·');
+  const famLonStr=lonEntierSeq.map(n=>LM[n].let).join('·');
+  
+  // Shem dynamique depuis les lettres canoniques
+  const hebLat=latEntierSeq.map(n=>LM[n].heb).join('·');
+  const hebLon=lonEntierSeq.map(n=>LM[n].heb).join('·');
+
+  return{
+    heb:'מִשְׁפַּחַת '+hebLat+'·'+hebLon,
+    lat:'Mishpahat '+famLatStr+'/'+famLonStr,
+    fr:'Famille '+letLat.let+'·'+letLon.let,
+    sig:letLat.mv+' vers '+letLon.mv+'. Tous les lieux de cette famille partagent cette nature de fond.'
+  };
+}
+
+// ── PASSOUKIM DE RÉSONANCE · Générés depuis le mouvement du Shem ──────────────
+const PASSOUKIM_RESONANCE={
+  "Mishkan haHibbur":{ref:"Qohelet 4:12",sefer:"Qohelet · Ecclésiaste",heb:"וְהַחוּט הַמְשֻׁלָּשׁ לֹא בִמְהֵרָה יִנָּתֵק",translit:"VehaHut hameshulash lo vimhera yinatek.",fr:"Le fil triple ne se rompt pas rapidement.",resonance:"Le lien constitué en trois ne se défait pas · ce qui sort d'ici relie durablement."},
+  "Mishkan haLeidah":{ref:"Tehilim 22:10",sefer:"Tehilim · Psaumes",heb:"כִּי אַתָּה גֹחִי מִבֶּטֶן מַבְטִיחִי עַל שְׁדֵי אִמִּי",translit:"Ki ata gohi mibeten mavtihi al shde imi.",fr:"Car c'est toi qui m'as tiré du ventre · ma confiance dès le sein de ma mère.",resonance:"Ce qui naît ici sort déjà en confiance · la direction vient du ventre même."},
+  "Mishkan haBirrur":{ref:"Malakhi 3:3",sefer:"Malakhi · Malachie",heb:"וְיָשַׁב מְצָרֵף וּמְטַהֵר כֶּסֶף",translit:"VeYashav metsaref umtaher kasef.",fr:"Il s'assoira · fondeur et purificateur d'argent.",resonance:"La coupure juste opère dans le silence assis · ce qui sort d'ici est purifié."},
+  "Mishkan haOr":{ref:"Bereshit 1:3",sefer:"Bereshit · Genèse",heb:"וַיֹּאמֶר אֱלֹהִים יְהִי אוֹר וַיְהִי אוֹר",translit:"VaYomer Elohim yehi or vayehi or.",fr:"Et Elohim dit : que la lumière soit · et la lumière fut.",resonance:"La première sortie est lumière · ce qui sort d'ici éclaire par nature."},
+  "Mishkan haShomer":{ref:"Tehilim 121:4",sefer:"Tehilim · Psaumes",heb:"הִנֵּה לֹא יָנוּם וְלֹא יִישָׁן שׁוֹמֵר יִשְׂרָאֵל",translit:"Hine lo yanum velo yishan shomer Yisrael.",fr:"Voici · il ne sommeille pas et ne dort pas · le gardien d'Israël.",resonance:"Le gardien ne relâche pas · ce qui sort d'ici est protégé sans interruption."},
+  "Mishkan haReshit":{ref:"Bereshit 1:1",sefer:"Bereshit · Genèse",heb:"בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ",translit:"Bereshit bara Elohim et haShamayim veet haAretz.",fr:"Au commencement Elohim créa les cieux et la terre.",resonance:"Ce qui sort d'ici porte une impulsion première · une fondation naît."},
+  "Mishkan haNahar":{ref:"Tehilim 46:5",sefer:"Tehilim · Psaumes",heb:"נָהָר פְּלָגָיו יְשַׂמְּחוּ עִיר אֱלֹהִים",translit:"Nahar pelagav yesamhu ir Elohim.",fr:"Le fleuve · ses bras réjouissent la cité d'Elohim.",resonance:"Le flux de ce lieu réjouit ce qu'il traverse · transmettre en circulant est sa nature."},
+  "Mishkan haPetah":{ref:"Tehilim 118:19",sefer:"Tehilim · Psaumes",heb:"פִּתְחוּ לִי שַׁעֲרֵי צֶדֶק אָבֹא בָם אוֹדֶה יָּהּ",translit:"Pithu li shaare tsedek avo vam ode Yah.",fr:"Ouvrez-moi les portes de la droiture · j'entrerai · je rendrai grâce à Yah.",resonance:"Le seuil franchi ouvre · ce qui sort d'ici porte l'ouverture accomplie."},
+  "Mishkan haMaon":{ref:"Devarim 26:15",sefer:"Devarim · Deutéronome",heb:"הַשְׁקִיפָה מִמְּעוֹן קָדְשְׁךָ מִן הַשָּׁמַיִם",translit:"Hashkifa mimeon kodshekha min haShamayim.",fr:"Regarde depuis la demeure de ta sainteté · depuis les cieux.",resonance:"L'abri regarde depuis sa hauteur · ce lieu protège ce qu'il voit."},
+  "Mishkan haSod":{ref:"Mishlei 3:32",sefer:"Mishlei · Proverbes",heb:"וְאֶת יְשָׁרִים סוֹדוֹ",translit:"Veet yesharim sodo.",fr:"Et avec les droits est son secret.",resonance:"Ce qui est caché ici est gardé pour les droits · la gestation précède la révélation."},
+  "Mishkan haAyin":{ref:"Bereshit 16:13",sefer:"Bereshit · Genèse",heb:"אַתָּה אֵל רֳאִי",translit:"Ata El Roi.",fr:"Tu es le Dieu qui voit.",resonance:"Ce qui sort d'ici a été vu avant d'être formulé · la vision précède tout."},
+  "Mishkan haBayit":{ref:"Mishlei 24:3",sefer:"Mishlei · Proverbes",heb:"בְּחָכְמָה יִבָּנֶה בַּיִת וּבִתְבוּנָה יִתְכּוֹנָן",translit:"BeHokhmah yibane bayit uvitvunah yitkonnan.",fr:"Par la sagesse la maison est bâtie · et par la compréhension elle s'affermit.",resonance:"Ce qui sort d'ici est structuré · la demeure bâtie par sagesse ne s'effondre pas."},
+  "Mishkan haHavhanah":{ref:"Mishlei 2:9",sefer:"Mishlei · Proverbes",heb:"אָז תָּבִין צֶדֶק וּמִשְׁפָּט וּמֵישָׁרִים כָּל מַעְגַּל טוֹב",translit:"Az tavin tsedek umishpat umesharim kol maagal tov.",fr:"Alors tu comprendras la droiture · le jugement · tout sentier bon.",resonance:"Ce qui sort d'ici est purifié par le discernement · la coupure juste a opéré."},
+  "Mishkan haConnexion":{ref:"Qohelet 4:12",sefer:"Qohelet · Ecclésiaste",heb:"וְהַחוּט הַמְשֻׁלָּשׁ לֹא בִמְהֵרָה יִנָּתֵק",translit:"VehaHut hameshulash lo vimhera yinatek.",fr:"Le fil triple ne se rompt pas rapidement.",resonance:"Le lien établi ici ne se défait pas · trois fils constituent la demeure."},
+  "Makom haSaf":{ref:"Bereshit 28:17",sefer:"Bereshit · Genèse",heb:"מַה נּוֹרָא הַמָּקוֹם הַזֶּה אֵין זֶה כִּי אִם שַׁעַר הַשָּׁמָיִם",translit:"Mah nora haMakom haze ein ze ki im Shaar haShamayim.",fr:"Que ce lieu est redoutable · ce n'est pas autre chose que la porte des cieux.",resonance:"Le lieu lui-même est seuil · ce qui entre est déjà en train de traverser."},
+  "Makom haNahar":{ref:"Yehezqel 47:1",sefer:"Yehezqel · Ézéchiel",heb:"וְהִנֵּה מַיִם יֹצְאִים מִתַּחַת מִפְתַּן הַבַּיִת קֵדְמָה",translit:"Vehine mayim yotsim mitakhat miftan haBayit kedmah.",fr:"Et voici des eaux sortant de dessous le seuil de la Maison vers l'orient.",resonance:"Le Fleuve sort du seuil de la Bayit · ce lieu transmet en circulant."},
+  "Makom haBayit":{ref:"Shemot 25:8",sefer:"Shemot · Exode",heb:"וְעָשׂוּ לִי מִקְדָּשׁ וְשָׁכַנְתִּי בְּתוֹכָם",translit:"Veasu li mikdash veshakhanti betokham.",fr:"Qu'ils me fassent un sanctuaire · et je résiderai au milieu d'eux.",resonance:"La structure vivante est celle où le Souffle réside · ce lieu protège ce qui s'y loge."},
+  "Makom haOr":{ref:"Bereshit 1:4",sefer:"Bereshit · Genèse",heb:"וַיַּרְא אֱלֹהִים אֶת הָאוֹר כִּי טוֹב",translit:"VaYar Elohim et haOr ki tov.",fr:"Et Elohim vit que la lumière était bonne.",resonance:"Ce lieu révèle · ce qui y entre ne reste pas dans l'ombre."},
+  "Makom haReshit":{ref:"Bereshit 1:1",sefer:"Bereshit · Genèse",heb:"בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ",translit:"Bereshit bara Elohim et haShamayim veet haAretz.",fr:"Au commencement Elohim créa les cieux et la terre.",resonance:"Ce lieu porte le commencement · l'impulsion naît ici."},
+  "Makom haTzir":{ref:"Yeshayahu 22:22",sefer:"Yeshayahu · Isaïe",heb:"וְנָתַתִּי מַפְתֵּחַ בֵּית דָּוִד עַל שִׁכְמוֹ",translit:"Venatati mafteah Beit David al shikhmo.",fr:"Et je placerai la clé de la maison de David sur son épaule.",resonance:"L'axe porte la clé · ce lieu est point de connexion entre ce qui ne pouvait se rejoindre."},
+  "Makom haHavhanah":{ref:"Mishlei 2:9",sefer:"Mishlei · Proverbes",heb:"אָז תָּבִין צֶדֶק וּמִשְׁפָּט וּמֵישָׁרִים כָּל מַעְגַּל טוֹב",translit:"Az tavin tsedek umishpat umesharim kol maagal tov.",fr:"Alors tu comprendras la droiture · le jugement et la rectitude · tout sentier bon.",resonance:"Le discernement est la loi de ce lieu · la coupure juste révèle le bon chemin."},
+  "Makom haMaavar":{ref:"Bereshit 32:23",sefer:"Bereshit · Genèse",heb:"וַיָּקָם בַּלַּיְלָה הוּא וַיַּעֲבֹר אֶת מַעֲבַר יַבֹּק",translit:"VaYaqam balaylah hu vaYavor et maavar Yabok.",fr:"Il se leva cette nuit-là · il traversa le gué du Yabboq.",resonance:"Le passage fait naître ce qu'il portait · traverser le gué constitue."},
+  "Shaar haMasa":{ref:"Bereshit 12:1",sefer:"Bereshit · Genèse",heb:"לֶךְ לְךָ מֵאַרְצְךָ וּמִמּוֹלַדְתְּךָ אֶל הָאָרֶץ אֲשֶׁר אַרְאֶךָּ",translit:"Lekh lekha meartzekha umimoladetkha el haaretz asher areka.",fr:"Va pour toi · de ta terre · de ta naissance · vers la terre que je te ferai voir.",resonance:"La porte met en route vers ce qui sera montré · ce qui entre sort en direction."},
+  "Shaar haBayit":{ref:"Tehilim 118:20",sefer:"Tehilim · Psaumes",heb:"זֶה הַשַּׁעַר לַיהוָה צַדִּיקִים יָבֹאוּ בוֹ",translit:"Ze haShaar laYHWH tsadikim yavou vo.",fr:"Voici la porte de YHWH · les justes y entreront.",resonance:"La porte accueille ceux qui sont constitués pour entrer · la réception est conditionnée."},
+  "Shaar haBikkurim":{ref:"Shemot 23:19",sefer:"Shemot · Exode",heb:"רֵאשִׁית בִּכּוּרֵי אַדְמָתְךָ תָּבִיא בֵּית יְהוָה אֱלֹהֶיךָ",translit:"Reshit bikkurei admatekha tavi Beit YHWH Elohekha.",fr:"Les prémices des premiers fruits de ta terre · tu les apporteras à la Maison de YHWH.",resonance:"La porte s'ouvre au moment de la maturité · à maturité seulement, non à la demande."},
+  "Shaar haMaavar":{ref:"Bamidbar 27:17",sefer:"Bamidbar · Nombres",heb:"אֲשֶׁר יֵצֵא לִפְנֵיהֶם וַאֲשֶׁר יָבֹא לִפְנֵיהֶם",translit:"Asher yetse lifnehem vaasher yavo lifnehem.",fr:"Qui sortira devant eux et qui entrera devant eux.",resonance:"La porte est elle-même le passage · franchir est l'acte constitutif."},
+  "Shaar haKabalah":{ref:"Shemot 19:8",sefer:"Shemot · Exode",heb:"כֹּל אֲשֶׁר דִּבֶּר יְהוָה נַעֲשֶׂה",translit:"Kol asher diber YHWH naase.",fr:"Tout ce que YHWH a dit · nous le ferons.",resonance:"La réception prépare à l'acte · ce qui entre par cette porte sort engagé."},
+  "Shaar haGilui":{ref:"Bamidbar 24:4",sefer:"Bamidbar · Nombres",heb:"נְאֻם שֹׁמֵעַ אִמְרֵי אֵל אֲשֶׁר מַחֲזֵה שַׁדַּי יֶחֱזֶה",translit:"Neum shomea imre El asher mahaze Shaday yeheze.",fr:"Parole de celui qui entend les dires d'El · qui voit la vision du Tout-Puissant.",resonance:"La porte révèle · ce qui était caché devient lisible en franchissant."},
+  "Shaar haHavhanah":{ref:"Melakhim Aleph 3:9",sefer:"Melakhim Aleph · 1 Rois",heb:"וְנָתַתָּ לְעַבְדְּךָ לֵב שֹׁמֵעַ לִשְׁפֹּט אֶת עַמְּךָ",translit:"Venatta leavdekha lev shomea lishpot et amkha.",fr:"Donne à ton serviteur un coeur qui écoute pour juger ton peuple.",resonance:"La porte sépare · seul ce qui a traversé l'épreuve du discernement continue."},
+  "Shaar haRiyah":{ref:"Bereshit 22:14",sefer:"Bereshit · Genèse",heb:"בְּהַר יְהוָה יֵרָאֶה",translit:"BeHar YHWH yeraeh.",fr:"Sur la montagne de YHWH il sera vu.",resonance:"La porte filtre par le regard · ce qui peut être vu entre."},
+  "Shaar haHibbur":{ref:"Bereshit 2:24",sefer:"Bereshit · Genèse",heb:"וְדָבַק בְּאִשְׁתּוֹ וְהָיוּ לְבָשָׂר אֶחָד",translit:"Vedavaq beishto vehayu levasar ehad.",fr:"Il s'attachera à sa femme · et ils seront une seule chair.",resonance:"La porte relie · traverser ici c'est entrer dans un attachement constitutif."},
+  "Shaar haNativ":{ref:"Yirmeyahu 6:16",sefer:"Yirmeyahu · Jérémie",heb:"שַׁאֲלוּ לִנְתִיבוֹת עוֹלָם וּרְאוּ אֵי זֶה דֶרֶךְ הַטּוֹב",translit:"Shaalu lintivot olam urvu ei ze derekh hatov.",fr:"Demandez les anciens sentiers · voyez où est le bon chemin · et marchez-y.",resonance:"La porte donne direction · on n'entre pas avec un chemin, on en sort avec un."}
+};
+function getPassouk(shem){
+  if(!shem)return null;
+  // Normalise : supprime toutes formes d'apostrophes + espaces · compare sans ponctuation
+  const normalize=s=>s.replace(/['\u2019\u2018\u02BC\u0027]/g,'').replace(/\s+/g,'').toLowerCase().trim();
+  const key=normalize(shem);
+  for(const k of Object.keys(PASSOUKIM_RESONANCE)){
+    if(normalize(k)===key)return PASSOUKIM_RESONANCE[k];
+  }
+  return null;
+}
+
+function renderPassouk(p,accentColor){
+  if(!p)return '';
+  const c=accentColor||'var(--teal)';
+  return '<div style="margin-top:.75rem;padding:.75rem 1rem;background:var(--surf2);border-left:3px solid '+c+';border-radius:0 7px 7px 0">'
+    +'<div style="font-size:9px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.375rem">📜 '+p.ref+' · '+p.sefer+'</div>'
+    +'<div style="font-size:15px;direction:rtl;color:var(--txt);line-height:1.65;margin-bottom:.375rem;font-weight:500">'+p.heb+'</div>'
+    +'<div style="font-size:11px;color:var(--txt2);margin-bottom:.25rem;font-style:italic">'+p.translit+'</div>'
+    +'<div style="font-size:12px;color:var(--txt);margin-bottom:.5rem;font-weight:500">'+p.fr+'</div>'
+    +'<div style="font-size:10px;color:'+c+';font-style:italic;border-top:1px solid var(--bord);padding-top:.375rem;margin-top:.375rem">✦ '+p.resonance+'</div>'
+    +'</div>';
+}
+
+function readDouble(a,b){
+  const key=String(a)+String(b);
+  return CODEX_DOUBLES[key]||null;
+}
+
+function readTriple(a,b,c){
+  const key=String(a)+String(b)+String(c);
+  return HAZAKAH_TRIPLES[key]||null;
+}
+
+// ── PCNT™ v3.1 · Protocole Canonique de Nomination Territoriale ──────────────
+// Codex Shem haMakomot v3.1 : entiers → Grande Famille · pondération exp droite→gauche · 4 Shem
+
+function extractParts(coord){
+  // Sépare la partie entière des décimales
+  const abs=Math.abs(coord);
+  const entier=Math.floor(abs);
+  // 7 premières décimales
+  const decStr=(abs-entier).toFixed(7).substring(2); // '0.XXXXXXX' → 'XXXXXXX'
+  const dec7=decStr.substring(0,7).split('').map(Number);
+  return{entier,dec7};
+}
+
+function entierToSeq(n){
+  // Chaque chiffre de la partie entière → lettre
+  return String(n).split('').map(Number);
+}
+
+function readSeqWithCodex(seq){
+  // Lit une séquence de chiffres avec le Codex des Doubles
+  const parts=[];
+  let i=0;
+  while(i<seq.length){
+    if(i+2<seq.length){
+      const triple=readTriple(seq[i],seq[i+1],seq[i+2]);
+      if(triple){parts.push({type:'triple',vals:[seq[i],seq[i+1],seq[i+2]],reading:triple,hazakah:true});i+=3;continue;}
+    }
+    if(i+1<seq.length){
+      const dbl=readDouble(seq[i],seq[i+1]);
+      if(dbl){parts.push({type:'double',vals:[seq[i],seq[i+1]],reading:dbl,hazakah:false});i+=2;continue;}
+    }
+    parts.push({type:'single',vals:[seq[i]],reading:LM[seq[i]].let+' · '+LM[seq[i]].mv,hazakah:false});
+    i++;
+  }
+  return parts;
+}
+
+// ── PCNT™ v3.1 · Pondération exponentielle droite→gauche ─────────────────────
+function ponderationExp(dec7){
+  // FL-315 · Qri'at haTnuah · lecture droite-à-gauche
+  // Les décimales de droite varient plus → poids le plus fort
+  const rev=[...dec7].reverse();
+  let val=0;
+  for(let i=0;i<7;i++) val+=rev[i]*Math.exp(-(i+1));
+  return val;
+}
+
+function condenser4(val){
+  // Partie décimale × 10000 → 4 chiffres
+  const frac=val-Math.floor(val);
+  const n=Math.round(frac*10000);
+  // Pad to 4 digits
+  return String(n).padStart(4,'0').split('').map(Number);
+}
+
+function computeV3(lat,lon){
+  const pLat=extractParts(lat);
+  const pLon=extractParts(lon);
+
+  // ÉTAPE 1 · GRANDE FAMILLE depuis les entiers
+  const latEntierSeq=entierToSeq(pLat.entier);
+  const lonEntierSeq=entierToSeq(pLon.entier);
+  const famLatParts=readSeqWithCodex(latEntierSeq);
+  const famLonParts=readSeqWithCodex(lonEntierSeq);
+  const famKey=latEntierSeq.join('')+lonEntierSeq.join('');
+  let famHazakah=null;
+  for(const k of Object.keys(HAZAKAH_TRIPLES)){
+    if(famKey.includes(k)){famHazakah=HAZAKAH_TRIPLES[k];break;}
+  }
+  const shemFamille=genShemFamille(latEntierSeq,lonEntierSeq,famLatParts,famLonParts,famHazakah);
+
+  // ÉTAPE 2 · PONDÉRATION EXPONENTIELLE droite→gauche par axe
+  const latDec=pLat.dec7;
+  const lonDec=pLon.dec7;
+  const valLat=ponderationExp(latDec);
+  const valLon=ponderationExp(lonDec);
+
+  // ÉTAPE 3 · CONDENSATION en séquences de 4 chiffres
+  const seqLat=condenser4(valLat);
+  const seqLon=condenser4(valLon);
+
+  // ÉTAPE 4 · LECTURE CANONIQUE par axe (Codex Doubles + Hazakah)
+  const dblLat=readSeqWithCodex(seqLat);
+  const dblLon=readSeqWithCodex(seqLon);
+
+  // ÉTAPE 5 · TROIS SHEM · dégagement depuis seqLat et seqLon séparément
+  const quatre=genQuatreShem(seqLat,seqLon,dblLat,dblLon,latEntierSeq,lonEntierSeq,valLat,valLon);
+
+  // ÉTAPE 6 · SHEM GRAINE · Zera haMakom™ · 4e décimale de chaque axe
+  const graineLat=latDec[3]; // index 3 = 4e décimale
+  const graineLon=lonDec[3];
+  const shemGraine={
+    lettreLat:LM[graineLat],
+    lettreLon:LM[graineLon],
+    heb:LM[graineLat].heb+'·'+LM[graineLon].heb,
+    lat:LM[graineLat].let+'·'+LM[graineLon].let,
+    fr:'Cellule 10 m · '+LM[graineLat].let+' (Nord/Sud) · '+LM[graineLon].let+' (Est/Ouest)',
+    dec4_lat:graineLat,dec4_lon:graineLon
+  };
+
+  return{
+    pLat,pLon,
+    latEntierSeq,lonEntierSeq,
+    famLatParts,famLonParts,
+    famHazakah,shemFamille,
+    latDec,lonDec,
+    valLat,valLon,
+    seqLat,seqLon,
+    dblLat,dblLon,
+    quatre,shemGraine
+  };
+}
+
+// Compat alias
+function computeV2(lat,lon){ return computeV3(lat,lon); }
+
+// ── GÉNÉRATION DES TROIS SHEM · PCNT™ v3.1 ─────────────────────────────────
+// Logique v2.1 + pondération exp droite→gauche sur chaque axe séparément
+// seqLat[0] → Makom · seqLon[0] → Sha'ar · seqLon[3] → Mishkan
+function genQuatreShem(seqLat,seqLon,dblLat,dblLon,entLat,entLon,valLat,valLon){
+  const lectLat=dblLat.map(p=>p.reading+(p.hazakah?' ✦':'')).join(' · ');
+  const lectLon=dblLon.map(p=>p.reading+(p.hazakah?' ✦':'')).join(' · ');
+
+  // Clé Corpus v3.1 · identique à v2.1 mais depuis séquences exp
+  const latStr=seqLat.join('-');
+  const lonStr=seqLon.join('-');
+  const corpusKey=latStr+'/'+lonStr;
+
+  // Identifiant biaxial · 2 premières lettres de chaque axe
+  // ICL™ · Identité Canonique du Lieu · 8 lettres · 4 Lat + 4 Lon
+  const iclLat=seqLat.map(n=>LM[n]);
+  const iclLon=seqLon.map(n=>LM[n]);
+  const idHeb=iclLat.map(l=>l.heb).join('·')+'|'+iclLon.map(l=>l.heb).join('·');
+  const idLat=iclLat.map(l=>l.let).join('·')+'|'+iclLon.map(l=>l.let).join('·');
+  // Identifiant court (2+2 lettres) pour l'affichage compact historique
+  const idHebShort=iclLat[0].heb+'·'+iclLat[1].heb+'|'+iclLon[0].heb+'·'+iclLon[1].heb;
+  const idLatShort=iclLat[0].let+'·'+iclLat[1].let+'|'+iclLon[0].let+'·'+iclLon[1].let;
+
+  // DÉGAGEMENT DES TROIS SHEM · même logique que v2.1
+  const mIdx  =seqLat[0];              // Makom   · ouverture Lat
+  const sIdx  =seqLon[0];              // Sha'ar  · ouverture Lon
+  const mshIdx=(seqLat[seqLat.length-1]+seqLon[seqLon.length-1])%10;// Mishkan · (clôture Lat + clôture Lon) mod 10 · ce que le lieu accomplit en lui-même
+
+  const makomTbl={
+    0:{h:'מָקוֹם עֵין הַמָּקוֹם',l:"Makom Ein haMakom",fr:"Le Lieu du Regard Fondateur",s:"Ce lieu voit ce qui précède toute forme · la vision est sa nature constitutive"},
+    1:{h:'מָקוֹם רֵאשִׁית',l:"Makom Reshit",fr:"Le Lieu de l'Origine",s:"Ce lieu porte en lui le commencement · l'impulsion naît ici"},
+    2:{h:'מָקוֹם הַבַּיִת',l:"Makom haBayit",fr:"Le Lieu de la Demeure",s:"Ce lieu est structure vivante · il protège ce qui s'y loge"},
+    3:{h:'מָקוֹם הַנָּהָר',l:"Makom haNahar",fr:"Le Lieu du Fleuve",s:"Ce lieu transmet en circulant · le passage lui-même est la révélation"},
+    4:{h:'מָקוֹם הַסַּף',l:"Makom haSaf",fr:"Le Lieu du Seuil",s:"Ce lieu est seuil constitutif · ce qui entre est déjà en train de traverser"},
+    5:{h:'מָקוֹם הָאוֹר',l:"Makom haOr",fr:"Le Lieu de la Lumière",s:"Ce lieu révèle · ce qui y entre ne reste pas dans l'ombre"},
+    6:{h:'מָקוֹם הַצִּיר',l:"Makom haTzir",fr:"Le Lieu de l'Axe",s:"Ce lieu est point de connexion · il relie ce qui ne pouvait se rejoindre"},
+    7:{h:'מָקוֹם הַהַבְחָנָה',l:"Makom haHavhanah",fr:"Le Lieu du Discernement",s:"Ce lieu tranche avec justesse · la coupure juste est sa loi"},
+    8:{h:'מָקוֹם הַמָּעוֹן',l:"Makom haMaon",fr:"Le Lieu de l'Abri",s:"Ce lieu protège · l'espace protégé est sa première nature"},
+    9:{h:'מָקוֹם הַסּוֹד',l:"Makom haSod",fr:"Le Lieu du Secret",s:"Ce lieu porte ce qui n'est pas encore visible · la gestation est sa loi"}
+  };
+  const shaarTbl={
+    0:{h:'שַׁעַר הָרְאִיָּה',l:"Sha'ar haR'iyah",fr:"La Porte de la Vision",s:"La porte filtre par le regard · seul ce qui peut être vu entre"},
+    1:{h:'שַׁעַר הָרֵאשִׁית',l:"Sha'ar haReshit",fr:"La Porte de l'Origine",s:"La porte réinitialise · ce qui entre recommence depuis l'origine"},
+    2:{h:'שַׁעַר הַבַּיִת',l:"Sha'ar haBayit",fr:"La Porte de la Demeure",s:"La porte accueille · elle reçoit dans un espace constitué"},
+    3:{h:'שַׁעַר הַמַּסָּע',l:"Sha'ar haMasa",fr:"La Porte du Voyage",s:"La porte met en mouvement · ce qui entre sort en direction"},
+    4:{h:'שַׁעַר הַמַּעֲבָר',l:"Sha'ar haMaavar",fr:"La Porte du Passage",s:"La porte est elle-même le passage · franchir est l'acte"},
+    5:{h:'שַׁעַר הַגִּלּוּי',l:"Sha'ar haGilui",fr:"La Porte de la Révélation",s:"La porte révèle · ce qui était caché devient lisible en franchissant"},
+    6:{h:'שַׁעַר הַחִבּוּר',l:"Sha'ar haHibbur",fr:"La Porte de la Connexion",s:"La porte relie · traverser ici c'est entrer dans un réseau"},
+    7:{h:'שַׁעַר הַהַבְחָנָה',l:"Sha'ar haHavhanah",fr:"La Porte du Discernement",s:"La porte sépare · seul ce qui a traversé l'épreuve continue"},
+    8:{h:'שַׁעַר הַקַּבָּלָה',l:"Sha'ar haKabalah",fr:"La Porte de la Réception",s:"La porte prépare ce qu'elle reçoit · la réception est conditionnée"},
+    9:{h:'שַׁעַר הַבִּכּוּרִים',l:"Sha'ar haBikkurim",fr:"La Porte des Premiers Fruits",s:"La porte s'ouvre à maturité · pas à la demande"}
+  };
+  const mishkanTbl={
+    0:{h:'מִשְׁכַּן הָאַיִן',l:"Mishkan haAyin",fr:"La Demeure du Regard",s:"Ce qui sort d'ici a été vu avant d'être formulé · la vision précède"},
+    1:{h:'מִשְׁכַּן הָרֵאשִׁית',l:"Mishkan haReshit",fr:"La Demeure de l'Origine",s:"Ce qui sort d'ici porte une impulsion première · une fondation naît"},
+    2:{h:'מִשְׁכַּן הַבַּיִת',l:"Mishkan haBayit",fr:"La Demeure de la Maison",s:"Ce qui sort d'ici est logé · il porte la structure de ce lieu"},
+    3:{h:'מִשְׁכַּן הַנָּהָר',l:"Mishkan haNahar",fr:"La Demeure du Fleuve",s:"Ce qui sort d'ici est en mouvement · il transmet en circulant"},
+    4:{h:'מִשְׁכַּן הַפֶּתַח',l:"Mishkan haPetah",fr:"La Demeure de l'Ouverture",s:"Ce qui sort d'ici s'ouvre · le seuil franchi donne direction"},
+    5:{h:'מִשְׁכַּן הָאוֹר',l:"Mishkan haOr",fr:"La Demeure de la Lumière",s:"Ce qui sort d'ici éclaire · la révélation est son accomplissement"},
+    6:{h:'מִשְׁכַּן הַחִבּוּר',l:"Mishkan haHibbur",fr:"La Demeure de la Connexion",s:"Ce qui sort d'ici relie · le lien établi ici ne se défait pas"},
+    7:{h:'מִשְׁכַּן הַבֵּירּוּר',l:"Mishkan haBirrur",fr:"La Demeure du Discernement",s:"Ce qui sort d'ici est purifié · la coupure juste a opéré"},
+    8:{h:'מִשְׁכַּן הַשּׁוֹמֵר',l:"Mishkan haShomer",fr:"La Demeure du Gardien",s:"Ce qui sort d'ici est protégé · le lieu a tenu son rôle de garde"},
+    9:{h:'מִשְׁכַּן הַלֵּידָה',l:"Mishkan haLeidah",fr:"La Demeure de la Naissance",s:"Ce qui sort d'ici est né · la gestation s'est accomplie"}
+  };
+
+  const mEntry  =makomTbl[mIdx]  ||makomTbl[5];
+  const sEntry  =shaarTbl[sIdx]  ||shaarTbl[5];
+  const mshEntry=mishkanTbl[mshIdx]||mishkanTbl[5];
+
+  return{
+    idHeb,idLat,idHebShort,idLatShort,
+    lectLat,lectLon,
+    corpusKey,
+    makom  :{heb:mEntry.h,  lat:mEntry.l,  fr:mEntry.fr,  sig:mEntry.s},
+    shaar  :{heb:sEntry.h,  lat:sEntry.l,  fr:sEntry.fr,  sig:sEntry.s},
+    mishkan:{heb:mshEntry.h,lat:mshEntry.l,fr:mshEntry.fr,sig:mshEntry.s}
+  };
+}
+
+// Compat v2 alias (ancien code)
+function genTroisShem(seqLat,seqLon,dblLat,dblLon,entLat,entLon){
+  return genQuatreShem(seqLat,seqLon,dblLat,dblLon,entLat,entLon);
+}
+
+
+function genDynamic(openLat,closeLon,openLon,closeLat,lectLat,lectLon){
+  // Shem 1 · Makom · structure profonde du lieu
+  const makomTbl={
+    0:{h:'מָקוֹם עֵין הַמָּקוֹם',l:'Makom Ein haMakom',fr:'Le Lieu du Regard Fondateur',s:'Ce lieu voit ce qui précède toute forme · la vision est sa nature constitutive'},
+    1:{h:'מָקוֹם רֵאשִׁית',l:'Makom Reshit',fr:'Le Lieu de l\'Origine',s:'Ce lieu porte en lui le commencement · l\'impulsion naît ici'},
+    2:{h:'מָקוֹם הַבַּיִת',l:'Makom haBayit',fr:'Le Lieu de la Demeure',s:'Ce lieu est structure vivante · il protège ce qui s\'y loge'},
+    3:{h:'מָקוֹם הַנָּהָר',l:'Makom haNahar',fr:'Le Lieu du Fleuve',s:'Ce lieu transmet en circulant · le passage lui-même est la révélation'},
+    4:{h:'מָקוֹם הַסַּף',l:'Makom haSaf',fr:'Le Lieu du Seuil',s:'Ce lieu est seuil constitutif · ce qui entre est déjà en train de traverser'},
+    5:{h:'מָקוֹם הָאוֹר',l:'Makom haOr',fr:'Le Lieu de la Lumière',s:'Ce lieu révèle · ce qui y entre ne reste pas dans l\'ombre'},
+    6:{h:'מָקוֹם הַצִּיר',l:'Makom haTzir',fr:'Le Lieu de l\'Axe',s:"Ce lieu est point de connexion · il relie ce qui ne pouvait se rejoindre"},
+    7:{h:'מָקוֹם הַהַבְחָנָה',l:'Makom haHavhanah',fr:'Le Lieu du Discernement',s:'Ce lieu tranche avec justesse · la coupure juste est sa loi'},
+    8:{h:'מָקוֹם הַמָּעוֹן',l:"Makom haMa'on",fr:'Le Lieu de l\'Abri',s:"Ce lieu protège · l'espace protégé est sa première nature"},
+    9:{h:'מָקוֹם הַסּוֹד',l:'Makom haSod',fr:'Le Lieu du Secret',s:'Ce lieu porte ce qui n\'est pas encore visible · la gestation est sa loi'}
+  };
+  // Shem 2 · Sha'ar · fonction
+  const shaarTbl={
+    0:{h:'שַׁעַר הָרְאִיָּה',l:"Sha'ar haR'iyah",fr:'La Porte de la Vision',s:"La porte filtre par le regard · seul ce qui peut être vu entre"},
+    1:{h:'שַׁעַר הָרֵאשִׁית',l:"Sha'ar haReshit",fr:'La Porte de l\'Origine',s:'La porte réinitialise · ce qui entre recommence depuis l\'origine'},
+    2:{h:'שַׁעַר הַבַּיִת',l:"Sha'ar haBayit",fr:'La Porte de la Demeure',s:"La porte accueille · elle reçoit dans un espace constitué"},
+    3:{h:'שַׁעַר הַמַּסָּע',l:"Sha'ar haMasa",fr:'La Porte du Voyage',s:"La porte met en mouvement · ce qui entre sort en direction"},
+    4:{h:'שַׁעַר הַמַּעֲבָר',l:"Sha'ar haMa'avar",fr:'La Porte du Passage',s:'La porte est elle-même le passage · franchir est l\'acte'},
+    5:{h:'שַׁעַר הַגִּלּוּי',l:"Sha'ar haGilui",fr:'La Porte de la Révélation',s:"La porte révèle · ce qui était caché devient lisible en franchissant"},
+    6:{h:'שַׁעַר הַחִבּוּר',l:"Sha'ar haHibbur",fr:'La Porte de la Connexion',s:'La porte relie · traverser ici c\'est entrer dans un réseau'},
+    7:{h:'שַׁעַר הַהַבְחָנָה',l:"Sha'ar haHavhanah",fr:'La Porte du Discernement',s:'La porte sépare · seul ce qui a traversé l\'épreuve continue'},
+    8:{h:'שַׁעַר הַקַּבָּלָה',l:"Sha'ar haKabalah",fr:'La Porte de la Réception',s:"La porte prépare ce qu'elle reçoit · la réception est conditionnée"},
+    9:{h:'שַׁעַר הַבִּכּוּרִים',l:"Sha'ar haBikkurim",fr:'La Porte des Premiers Fruits',s:'La porte s\'ouvre à maturité · pas à la demande'}
+  };
+  // Shem 3 · Mishkan · finalité
+  const mishkanTbl={
+    0:{h:'מִשְׁכַּן הָאַיִן',l:'Mishkan haAyin',fr:'La Demeure du Regard',s:"Ce qui sort d'ici a été vu avant d'être formulé · la vision précède"},
+    1:{h:'מִשְׁכַּן הָרֵאשִׁית',l:'Mishkan haReshit',fr:'La Demeure de l\'Origine',s:'Ce qui sort d\'ici porte une impulsion première · une fondation naît'},
+    2:{h:'מִשְׁכַּן הַבַּיִת',l:'Mishkan haBayit',fr:'La Demeure de la Maison',s:"Ce qui sort d'ici est logé · il porte la structure de ce lieu"},
+    3:{h:'מִשְׁכַּן הַנָּהָר',l:'Mishkan haNahar',fr:'La Demeure du Fleuve',s:"Ce qui sort d'ici est en mouvement · il transmet en circulant"},
+    4:{h:'מִשְׁכַּן הַפֶּתַח',l:'Mishkan haPetah',fr:'La Demeure de l\'Ouverture',s:'Ce qui sort d\'ici s\'ouvre · le seuil franchi donne direction'},
+    5:{h:'מִשְׁכַּן הָאוֹר',l:'Mishkan haOr',fr:'La Demeure de la Lumière',s:'Ce qui sort d\'ici éclaire · la révélation est son accomplissement'},
+    6:{h:'מִשְׁכַּן הַחִבּוּר',l:'Mishkan haHibbur',fr:'La Demeure de la Connexion',s:'Ce qui sort d\'ici relie · le lien établi ici ne se défait pas'},
+    7:{h:'מִשְׁכַּן הַבֵּירּוּר',l:'Mishkan haBirrur',fr:'La Demeure du Discernement',s:'Ce qui sort d\'ici est purifié · la coupure juste a opéré'},
+    8:{h:'מִשְׁכַּן הַשּׁוֹמֵר',l:'Mishkan haShomer',fr:'La Demeure du Gardien',s:'Ce qui sort d\'ici est protégé · le lieu a tenu son rôle de garde'},
+    9:{h:'מִשְׁכַּן הַלֵּידָה',l:'Mishkan haLeidah',fr:'La Demeure de la Naissance',s:'Ce qui sort d\'ici est né · la gestation s\'est accomplie'}
+  };
+
+  const mIdx=openLat.n;
+  const sIdx=openLon.n;
+  const mshIdx=(closeLat.n+closeLon.n)%10;// Mishkan · (clôture Lat + clôture Lon) mod 10
+
+  return{
+    makom:{...(makomTbl[mIdx]||makomTbl[5]),sig:(makomTbl[mIdx]||makomTbl[5]).s},
+    shaar:{...(shaarTbl[sIdx]||shaarTbl[5]),sig:(shaarTbl[sIdx]||shaarTbl[5]).s},
+    mishkan:{...(mishkanTbl[mshIdx]||mishkanTbl[5]),sig:(mishkanTbl[mshIdx]||mishkanTbl[5]).sig||(mishkanTbl[mshIdx]||mishkanTbl[5]).s}
+  };
+}
+
+function genChecksum(lat,lon){
+  let h=0;
+  const s=lat.toFixed(7)+'|'+lon.toFixed(7)+'|ICL-PCNT-v3.1';
+  for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}
+  return 'sha256-'+Math.abs(h).toString(16).padStart(8,'0')+'…';
+}
+
+// ── UI STATE ──────────────────────────────────────────────────────────────────
+let gpsCoords=null;
+let mode='manual';
+let currentPayload=null;
+let shemHistory=[];
+let dualEngineHistory=[];
+let dualEngineNotes={};
+let gpsAcquisitionSamples=[];
+const ZERA_METERS=0.36;
+// CAL-ZERA-001 · Première métrique issue du test terrain du 22 août 2026 :
+// 7 Zera terrain / 10.7029627916 Zera GPS nets = 0.6540242762.
+// Statut expérimental : la valeur brute reste toujours conservée pour recalibration.
+const ZERA_CALIBRATION_FACTOR=0.6540242762;
+const ZERA_CALIBRATION_VERSION='CAL-ZERA-001-v0.1';
+const GPS_ZERA_MAX_ACCURACY_M=10; // seuil indicatif de prudence, jamais un blocage du calcul Zera
+const delay=ms=>new Promise(r=>setTimeout(r,ms));
+
+// LOI ZTS-COORD-7D · Toute entrée est canonisée à 7 décimales avant calcul.
+// La même valeur figée est obligatoirement transmise aux deux moteurs ICL.
+const COORDINATE_DECIMALS=7;
+const PADA_TERRITORIAL_REGISTRY=Object.freeze({
+  dataset:'Adresses_PADA_correia_04062026',
+  roadDataset:'Voirie_PADA_correia_04062026',
+  territory:'COCODY',
+  addressPointCount:6025,
+  roadCount:386,
+  crs:'EPSG:32630',
+  localSpatialLibrary:'territorial-anchor-data-v0.1.js',
+  resolver:'Zera Territorial Convergence Resolver™ v0.3',
+  resolverImplementation:'Territorial Anchor Resolver™ v0.3',
+  destinationResolver:'OmeH Destination Proximity Resolver™ v0.1',
+  qedimah:'Qedimah Territorial Potential™ 159 v0.1',
+  zeraCoordinateRegistry:'Zera Fixed Coordinate Registry™ v0.1',
+  resolutionPipelineM:[35,10,1,0.36],
+  markerRule:'ONE_MAP_MARKER_PER_PADA_ADDRESS_POINT'
+});
+const COCKPIT_ARCHITECTURE=Object.freeze({
+  officialName:'Cockpit Spatial™ v4.0 - Makom Intelligence',
+  role:'TERRITORIAL_LAB_AND_API_PROVIDER',
+  consumers:[
+    {id:'maps.pada.ci',name:'Maps.pada.ci',function:'Carte territoriale avec agent conversationnel pour orienter les résidents depuis leur contexte, leur position GPS, leur destination ou leur recherche'},
+    {id:'omeh.ai',name:'OmeH.ai',function:'Application de guidage et d\'orientation avec agent territorial embarqué'},
+    {id:'hadibbur',name:'haDibbur',function:'Espace conversationnel territorial avec agent'},
+    {id:'ganh.ai',name:'GanH.ai',function:'Horloge du Souffle · contexte temporel territorial'}
+  ]
+});
+function canonicalCoordinate7(value){
+  const n=Number(value);
+  if(!Number.isFinite(n))throw new Error('COORDINATE_NOT_FINITE');
+  return Number(n.toFixed(COORDINATE_DECIMALS));
+}
+
+function haversineMeters(a,b){
+  if(!a||!b)return null;
+  const R=6371000,toRad=v=>v*Math.PI/180;
+  const dLat=toRad(b.lat-a.lat),dLon=toRad(b.lon-a.lon);
+  const x=Math.sin(dLat/2)**2+Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLon/2)**2;
+  return 2*R*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
+
+function createDualObservation(inputSnapshot,historicalResult,newResult){
+  const newView=window.ICLConstitutionEngine.getTerritorialTestView(newResult);
+  const previous=dualEngineHistory[0]||null;
+  const point={lat:inputSnapshot.lat,lon:inputSnapshot.lon};
+  const distance=previous?haversineMeters(previous.point,point):null;
+  const distanceZera=distance===null?null:distance/ZERA_METERS;
+  const calibratedDistanceZera=distanceZera===null?null:distanceZera*ZERA_CALIBRATION_FACTOR;
+  const calibratedDistanceM=calibratedDistanceZera===null?null:calibratedDistanceZera*ZERA_METERS;
+  const historicalIcl=historicalResult.icl.letters;
+  const newIcl=newView&&newView.icl?newView.icl.value:null;
+  const historicalChanged=Boolean(previous&&previous.historicalIcl!==historicalIcl);
+  const newChanged=Boolean(previous&&previous.newIcl!==newIcl);
+  const accuracy=inputSnapshot.accuracyM;
+  const territorialAnchor=window.TerritorialAnchorResolver?window.TerritorialAnchorResolver.resolve({lat:point.lat,lon:point.lon,accuracyM:accuracy,acquisitionSamples:inputSnapshot.acquisitionSamples,previous:previous,calibrationFactor:ZERA_CALIBRATION_FACTOR}):{engine:'Territorial Anchor Resolver™',version:'0.3.0',status:'LIBRARY_UNAVAILABLE'};
+  const destinationProximity=window.OmeHDestinationProximityResolver?window.OmeHDestinationProximityResolver.resolve({lat:point.lat,lon:point.lon,accuracyM:accuracy,destination:inputSnapshot.destination}):{engine:'OmeH Destination Proximity Resolver™',version:'0.1.0',status:'LIBRARY_UNAVAILABLE'};
+  const matchSamples=inputSnapshot.acquisitionSamples&&inputSnapshot.acquisitionSamples.length?inputSnapshot.acquisitionSamples:[{lat:point.lat,lon:point.lon,accuracyM:accuracy}];
+  if(window.ZeraFixedCoordinateRegistry&&territorialAnchor.zeraCell&&territorialAnchor.zeraCell.cellId){
+    const fixedCell=window.ZeraFixedCoordinateRegistry.getCell({roadId:territorialAnchor.road.id,partIndex:territorialAnchor.road.partIndex,index:territorialAnchor.zeraCell.indexFromCanonicalPartStart,withAnchors:true});
+    territorialAnchor.fixedCoordinateCell=fixedCell;
+    territorialAnchor.zeraGpsMatch=window.ZeraFixedCoordinateRegistry.match({samples:matchSamples,previousAnchor:previous&&previous.territorialAnchor,currentAnchor:territorialAnchor,windowCells:98});
+    territorialAnchor.presenceDeposit=window.ZeraFixedCoordinateRegistry.depositObservation({cell:fixedCell,coordinates:{gpsInput:point,acquisitionSamples:matchSamples},capturedAt:inputSnapshot.capturedAt,confirmed:false});
+  }
+  if(window.ZeraAddressDomainRegistry&&territorialAnchor.selectedAddress){
+    territorialAnchor.addressDomain=window.ZeraAddressDomainRegistry.getDomainByAddressId({addressId:territorialAnchor.selectedAddress.id});
+  }
+  const qedimah=window.QedimahTerritorialPotential?window.QedimahTerritorialPotential.evolve({anchor:territorialAnchor,samples:matchSamples,previousQedimah:previous&&previous.qedimah||null}):{engine:'Qedimah Territorial Potential™ 159',version:'0.1.0',status:'LIBRARY_UNAVAILABLE'};
+  const qualified=distance!==null;
+  const accuracyAdvisory=accuracy!==null&&accuracy>GPS_ZERA_MAX_ACCURACY_M?'GOOGLE_UNCERTAINTY_HIGH':'GOOGLE_UNCERTAINTY_ACCEPTABLE';
+  let transition='BASELINE';
+  let lowerBound=null,upperBound=null,estimatedTransition=null;
+  if(previous){
+    if(historicalChanged||newChanged){
+      const combinedUncertainty=(accuracy||0)+(previous.accuracy||0);
+      lowerBound=Math.max(0,distance-combinedUncertainty);
+      upperBound=distance+combinedUncertainty;
+      estimatedTransition=(lowerBound+upperBound)/2;
+      transition=combinedUncertainty>0&&distance<=combinedUncertainty?'GPS_JITTER_CANDIDATE':'ICL_TRANSITION_CANDIDATE';
+    }else{
+      transition='ICL_STABLE';
+    }
+  }
+  const sameInput=Boolean(
+    historicalResult.coordinates.lat===inputSnapshot.lat&&
+    historicalResult.coordinates.lon===inputSnapshot.lon&&
+    newResult&&newResult.source&&
+    newResult.source.lat===inputSnapshot.lat&&
+    newResult.source.lon===inputSnapshot.lon
+  );
+  const observation={
+    testId:'ICL-TEST-'+String(dualEngineHistory.length+1).padStart(4,'0'),
+    timestamp:new Date().toISOString(),
+    input:inputSnapshot,
+    point,
+    source:inputSnapshot.source,
+    accuracy,
+    measurementQualified:qualified,
+    sameInputAppliedToBothEngines:sameInput,
+    distanceFromPreviousM:distance,
+    distanceFromPreviousZera:distanceZera,
+    calibratedDistanceFromPreviousM:calibratedDistanceM,
+    calibratedDistanceFromPreviousZera:calibratedDistanceZera,
+    territorialAnchor:territorialAnchor,
+    destinationProximity:destinationProximity,
+    qedimah:qedimah,
+    historicalIcl,newIcl,historicalChanged,newChanged,transition,
+    zeraSpatial:{
+      status:transition,
+      distanceZera:distanceZera,
+      distanceM:distance,
+      calibratedDistanceZera:calibratedDistanceZera,
+      calibratedDistanceM:calibratedDistanceM,
+      metersPerZera:ZERA_METERS,
+      calibration:{version:ZERA_CALIBRATION_VERSION,factor:ZERA_CALIBRATION_FACTOR,status:'EXPERIMENTAL',source:'7_ZERA_TERRAIN_VS_10.7029627916_ZERA_GPS_NET'},
+      lowerBoundM:lowerBound,
+      upperBoundM:upperBound,
+      estimatedTransitionM:estimatedTransition,
+      googleUncertaintyAdvisory:accuracyAdvisory,
+      accuracyAdvisoryThresholdM:GPS_ZERA_MAX_ACCURACY_M,
+      confidence:distance===null?'ORIGIN_POINT':(transition==='GPS_JITTER_CANDIDATE'?'DISTANCE_COMPUTED_WITH_GOOGLE_UNCERTAINTY':'DISTANCE_COMPUTED')
+    },
+    engines:{historical:historicalResult,candidate:newResult},
+    newEngineView:newView
+  };
+  dualEngineHistory.unshift(observation);
+  return observation;
+}
+
+function renderQedimahCard(qedimah){
+  if(!qedimah||qedimah.status==='LIBRARY_UNAVAILABLE'||qedimah.status==='QEDIMAH_UNRESOLVED')return '<div class="card" style="margin-top:12px;border-color:#c89"><strong>Qedimah Territorial Potential™ 159</strong><p style="font-size:12px;margin-top:6px">P0 non constitué · la rue de potentiel n’est pas encore disponible.</p></div>';
+  const potential=qedimah.streetPotential||{},all=potential.allPossibleZeras||{},nav=qedimah.p1Navigation||{},top=nav.nearestPotentialZeras||[],seq=qedimah.gematria&&qedimah.gematria.sequence||[];
+  return '<div class="card" style="margin-top:12px;padding:14px;border:2px solid #b98222;border-radius:9px;background:#fff9ec"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><strong style="color:#7a4b08">Qedimah Territorial Potential™ 159 · P0</strong><span style="font:11px var(--mono);color:#7a4b08">'+escapeReadable(qedimah.status)+' · génération '+escapeReadable(qedimah.generation)+'</span></div>'
+    +'<div style="font-size:11px;margin-top:5px"><strong>Mission immuable :</strong> '+seq.map(function(s){return escapeReadable(s.letter)+' · '+escapeReadable(s.mission);}).join(' → ')+'</div>'
+    +'<div style="font-size:12px;margin-top:8px"><strong>Naissance de P0 :</strong> '+escapeReadable(qedimah.birth)+' · '+escapeReadable(qedimah.qedimahId)+'</div>'
+    +'<div style="font-size:12px;margin-top:6px"><strong>Potentiel complet de la rue :</strong> '+escapeReadable(potential.reference&&potential.reference.street)+' · '+escapeReadable(all.count)+' Zera · '+escapeReadable(all.partCount)+' partie(s) · '+(all.ranges&&all.ranges.length?all.ranges.map(function(r){return escapeReadable(r.firstZeraId)+' → '+escapeReadable(r.lastZeraId);}).join(' · '):'plage indisponible')+'</div>'
+    +'<div style="font-size:12px;margin-top:6px"><strong>P1 navigue dans P0 :</strong> '+escapeReadable(nav.sampleCount)+' prise(s) · '+escapeReadable(nav.manifestationStatus)+'</div>'
+    +'<div style="font-size:12px;margin-top:6px"><strong>Trois potentiels révélés :</strong> '+(top.length?top.map(function(z,i){return '#'+(i+1)+' '+escapeReadable(z.zeraId)+' · médiane '+Number(z.medianDistanceM).toFixed(2)+' m';}).join(' · '):'aucun')+'</div>'
+    +'<div style="font-size:11px;color:var(--txt2);margin-top:7px"><strong>Loi :</strong> P1 ne crée ni coordonnées ni Zera ; il manifeste une possibilité déjà inscrite dans P0. Un nouveau P0 naît seulement après confirmation d’une autre rue.</div></div>';
+}
+
+function renderDestinationProximityCard(result){
+  if(!result||result.status==='DESTINATION_REQUIRED_OR_NOT_FOUND')return '<div class="card" style="margin-top:12px;border-style:dashed"><strong>OmeH Destination Proximity Resolver™ v0.1</strong><p style="font-size:12px;color:var(--txt2);margin-top:6px">Aucune destination fournie · logique conservée mais non exécutée pour cette prise.</p></div>';
+  if(result.status!=='DESTINATION_DISTANCE_COMPUTED')return '<div class="card" style="margin-top:12px;border-color:#b77"><strong>OmeH Destination Proximity Resolver™ v0.1</strong><p style="font-size:12px;margin-top:6px">'+escapeReadable(result.status)+' · vérifiez le numéro et le nom exact de la rue PADA.</p></div>';
+  const d=result.destination,m=result.measurement,r=d.rankOnStreet||{},near=(result.observedContext||{}).nearestPadaAddress||{};
+  return '<div class="card" style="margin-top:12px;padding:14px;border:2px solid #9a72d6;border-radius:9px;background:#faf7ff"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><strong style="color:#6b3fa0">OmeH Destination Proximity Resolver™ v0.1</strong><span style="font:11px var(--mono);color:#6b3fa0">UNE PRISE GPS · DESTINATION FIXE PADA</span></div>'
+    +'<div style="font-size:18px;font-weight:700;margin-top:10px">'+Number(m.distanceM).toFixed(2)+' m jusqu’à la destination · '+Number(m.distanceZeraEquivalent).toFixed(2)+' Zera équivalentes</div>'
+    +'<div style="font-size:12px;margin-top:7px"><strong>Destination :</strong> '+escapeReadable(d.number)+' '+escapeReadable(d.street)+' · PADA '+escapeReadable(d.id)+'</div>'
+    +'<div style="font-size:12px;margin-top:6px"><strong>Rang dans la rue :</strong> '+escapeReadable(r.index)+' sur '+escapeReadable(r.total)+' · '+escapeReadable(r.position)+'</div>'
+    +'<div style="font-size:12px;margin-top:6px"><strong>Contexte du point observé :</strong> '+escapeReadable(near.number)+' '+escapeReadable(near.street)+' · '+Number(near.distanceM||0).toFixed(2)+' m du GPS</div>'
+    +'<div style="font-size:11px;color:var(--txt2);margin-top:7px"><strong>Gouvernance :</strong> distance entre le GPS observé et la cible PADA fixe · ne constitue pas une preuve de Présence dans une Zera.</div></div>';
+}
+
+function renderTerritorialAnchorCard(anchor){
+  if(!anchor||anchor.status==='LIBRARY_UNAVAILABLE')return '<div class="card" style="margin-top:12px;border-color:#c66"><strong>Zera Territorial Convergence Resolver™ v0.3</strong><p>Bibliothèque spatiale locale indisponible. Vérifiez que territorial-anchor-data-v0.1.js et territorial-anchor-resolver-v0.3.js accompagnent le cockpit.</p></div>';
+  const counts=anchor.search&&anchor.search.counts?anchor.search.counts:{};
+  const address=anchor.selectedAddress;
+  const road=anchor.road;
+  const continuity=anchor.continuity||{};
+  const fusion=anchor.observationFusion||{};
+  const roadTransition=anchor.roadResolution&&anchor.roadResolution.transition?anchor.roadResolution.transition:{};
+  const fixedCell=anchor.fixedCoordinateCell||{};
+  const gpsMatch=anchor.zeraGpsMatch||{};
+  const bestMatch=gpsMatch.bestMatch||{};
+  const addressDomain=anchor.addressDomain||{};
+  const domainRange=addressDomain.zeraReservation||{};
+  const domainTopology=addressDomain.streetTopology||{};
+  const zera=anchor.zeraCell||{};
+  const addressText=address?(address.number==null?'':address.number+' ') + address.street+' · '+address.distanceM.toFixed(2)+' m du GPS':'Aucune adresse PADA dans 35 m';
+  const chainage=road?(road.chainageFromPartStartM==null?road.chainageFromStartM:road.chainageFromPartStartM):null;
+  const roadText=road?road.street+' · projection à '+road.distanceM.toFixed(2)+' m du GPS · '+chainage.toFixed(2)+' m depuis l’origine canonique de la partie':'Aucune rue résolue';
+  const cycleText=continuity.distanceFromPreviousM==null?'Point d’origine du cycle':continuity.calibratedDistanceFromPreviousZera.toFixed(2)+' Zera estimés · '+continuity.calibratedDistanceFromPreviousM.toFixed(2)+' m estimés · brut contraint '+continuity.distanceFromPreviousZera.toFixed(2)+' Zera / '+continuity.distanceFromPreviousM.toFixed(2)+' m'+(continuity.sameRoad?' · même rue':'');
+  const zeraIndex=zera.indexFromCanonicalPartStart==null?zera.indexFromRoadStart:zera.indexFromCanonicalPartStart;
+  const zeraText=zera.status==='ZERA_ESTIMATED'?zera.cellId+' · index '+zeraIndex+' · limites '+zera.boundsM.start.toFixed(2)+'–'+zera.boundsM.end.toFixed(2)+' m · décalage '+zera.offsetWithinCellM.toFixed(2)+' m':'Cellule Zera non résolue';
+  return '<div class="card" style="margin-top:12px;padding:14px;border:2px solid #64aeb3;border-radius:9px;background:#eef8f7"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><strong style="color:#176979">Zera Territorial Convergence Resolver™ v0.3</strong><span style="font:11px var(--mono);color:#6b3fa0">'+escapeReadable(anchor.status)+' · confiance '+escapeReadable(anchor.confidence.level)+' '+escapeReadable(anchor.confidence.score)+'%</span></div><div style="font-size:10px;color:var(--txt3);margin-top:3px">Implémentation conservée : Territorial Anchor Resolver™ v0.3 · multi-prises + PADA + continuité + Zera</div>'
+    +'<div style="font-size:12px;margin-top:9px"><strong>Convergence :</strong> '+(fusion.sampleCount||1)+' prise(s) · '+(fusion.inlierCount||1)+' retenue(s) · '+(fusion.rejectedCount||0)+' aberrante(s) rejetée(s) · dispersion médiane '+Number(fusion.medianSpreadM||0).toFixed(2)+' m</div>'
+    +'<div style="font-size:12px;margin-top:9px"><strong>Recherche progressive :</strong> 35 m = '+(counts.within35m||0)+' · 10 m = '+(counts.within10m||0)+' · 1 m = '+(counts.within1m||0)+' · 0,36 m = '+(counts.within036m||0)+'</div>'
+    +'<div style="font-size:12px;margin-top:6px"><strong>Ancre PADA :</strong> '+escapeReadable(addressText)+'</div>'
+    +'<div style="font-size:12px;margin-top:6px"><strong>Voirie contrainte :</strong> '+escapeReadable(roadText)+'</div>'
+    +'<div style="font-size:12px;margin-top:6px"><strong>Transition de voie :</strong> '+escapeReadable(roadTransition.status||'ORIGIN')+' · PADA fixe + prises GPS + fidélité au point précédent</div>'
+    +'<div style="font-size:12px;margin-top:6px"><strong>Cycle :</strong> '+escapeReadable(cycleText)+'</div>'
+    +'<div style="font-size:12px;margin-top:6px"><strong>Zera :</strong> '+escapeReadable(zeraText)+' · référentiel calculé, Présence estimée</div>'
+    +'<div style="font-size:12px;margin-top:6px"><strong>Coordonnée fixe Zera :</strong> '+(fixedCell.fixedCoordinate?escapeReadable(fixedCell.fixedCoordinate.center.lat.toFixed(7)+' · '+fixedCell.fixedCoordinate.center.lon.toFixed(7)):'non constituée')+' · '+escapeReadable(fixedCell.validation&&fixedCell.validation.status||'')+'</div>'
+    +'<div style="font-size:12px;margin-top:6px"><strong>ZERA GPS MATCH™ :</strong> '+escapeReadable(gpsMatch.status||'non calculé')+(bestMatch.zeraId?' · '+escapeReadable(bestMatch.zeraId)+' · médiane '+Number(bestMatch.medianDistanceM).toFixed(2)+' m · prise la plus proche #'+(Number(bestMatch.closestSampleIndex)+1)+' à '+Number(bestMatch.minimumDistanceM).toFixed(2)+' m · marge '+Number(bestMatch.marginToSecondBestM||0).toFixed(3)+' m':'')+'</div>'
+    +'<div style="font-size:12px;margin-top:6px"><strong>Constellation PADA :</strong> '+(bestMatch.anchorConstellation&&bestMatch.anchorConstellation.length?bestMatch.anchorConstellation.slice(0,3).map(function(a){return escapeReadable((a.number||'')+' '+a.street+' · '+a.distanceM.toFixed(2)+' m');}).join(' · '):'non disponible')+'</div>'
+    +'<div style="font-size:12px;margin-top:6px"><strong>Domaine d’adresse :</strong> '+(addressDomain.domainId?escapeReadable(addressDomain.domainId)+' · '+escapeReadable(domainRange.startZeraId)+' → '+escapeReadable(domainRange.endZeraId)+' · '+escapeReadable(domainRange.count)+' Zera réservées · '+escapeReadable(domainTopology.domainPosition)+(domainTopology.humanDeclaredPosition?' · position déclarée '+escapeReadable(domainTopology.humanDeclaredPosition):''):'non résolu')+'</div>'
+    +'<div style="font-size:12px;margin-top:6px"><strong>Espaces du domaine :</strong> '+(addressDomain.spaceBindings?escapeReadable(addressDomain.spaceBindings.status)+' · seuils, bâtiments, escaliers, étages, appartements et pièces associables aux Zera du domaine':'non initialisé')+'</div>'
+    +'<div style="font-size:12px;margin-top:6px"><strong>Objets territoriaux :</strong> '+escapeReadable(zera.territorialObjects&&zera.territorialObjects.count||0)+' ressource(s) · capacité multiple</div></div>';
+}
+
+function renderDualComparison(observation,historical){
+  const target=document.getElementById('tc-content');
+  if(!target||!observation)return;
+  const n=observation.newEngineView;
+  const input=observation.input||{};
+  const inputSamples=Array.isArray(input.acquisitionSamples)?input.acquisitionSamples:[];
+  const inputLatitude=Number(observation.point&&observation.point.lat);
+  const inputLongitude=Number(observation.point&&observation.point.lon);
+  const inputCoordinates=Number.isFinite(inputLatitude)&&Number.isFinite(inputLongitude)
+    ?'Lat '+inputLatitude.toFixed(COORDINATE_DECIMALS)+' · Lon '+inputLongitude.toFixed(COORDINATE_DECIMALS)
+    :'À renseigner';
+  const inputCapturedAt=input.capturedAt||observation.timestamp||null;
+  const inputSource=input.source||observation.source||'non fournie';
+  const movementEstimate=observation.distanceFromPreviousM==null?'Point d’origine · première prise':observation.calibratedDistanceFromPreviousZera.toFixed(2)+' Zera estimés · '+observation.calibratedDistanceFromPreviousM.toFixed(2)+' m estimés';
+  const rawDistance=observation.distanceFromPreviousM==null?'—':observation.distanceFromPreviousZera.toFixed(2)+' Zera GPS bruts · '+observation.distanceFromPreviousM.toFixed(2)+' m bruts';
+  const activeCell=observation.territorialAnchor&&observation.territorialAnchor.zeraCell&&observation.territorialAnchor.zeraCell.cellId?observation.territorialAnchor.zeraCell:null;
+  const territorialReference=activeCell?activeCell.cellId+' · '+activeCell.street:'Cellule Zera non résolue';
+  const accuracy=observation.accuracy==null?'non fournie':'±'+Math.round(observation.accuracy)+' m';
+  const newError=!n?'RÉSULTAT CANDIDAT ABSENT':n.status!=='CONSTITUTED'?(n.errors||[n.status]).join(', '):null;
+  const newIcl=newError?'ÉCHEC · '+newError:observation.newIcl;
+  const newShem=newError?'—':n.shem_makom.lat+' · '+n.shem_shaar.lat+' · '+n.shem_mishkan.lat;
+  const newZera=newError?'—':n.zera.latLetter.let+'·'+n.zera.lonLetter.let+' · TO CHARACTERIZE';
+  target.insertAdjacentHTML('beforeend',
+    '<div class="dual-card"><div class="dual-head"><div class="dual-title">ICL Dual Engine Lab™ · une entrée canonique à 7 décimales</div><div class="dual-status">'+observation.transition+'</div></div>'
+    +'<div class="dual-body"><div class="dual-grid">'
+    +'<div class="dual-engine"><div class="dual-label">ICL PCNT™ v3.1</div><div class="dual-icl">'+observation.historicalIcl+'</div><div class="dual-meta">'+historical.quatre.makom.lat+' · '+historical.quatre.shaar.lat+' · '+historical.quatre.mishkan.lat+'<br>Graine historique · '+historical.shemGraine.lat+'</div></div>'
+    +'<div class="dual-engine new"><div class="dual-label">ICL Constitution Engine™ v2.2</div><div class="dual-icl">'+newIcl+'</div><div class="dual-meta">'+newShem+'<br>Zera computationnelle · '+newZera+'</div></div>'
+    +'</div><div class="dual-observation"><strong>'+observation.testId+'</strong><br><span style="display:inline-block;margin:5px 0 3px;padding:5px 8px;border:1px solid rgba(255,255,255,.24);border-radius:6px;color:#fff;font-size:14px;font-weight:700">GPS d’entrée · '+escapeReadable(inputCoordinates)+'</span><br><span style="font-size:10px;opacity:.72">Source '+escapeReadable(inputSource)+' · '+inputSamples.length+' prise(s) d’acquisition'+(inputCapturedAt?' · '+escapeReadable(inputCapturedAt):'')+' · conservée sur 7 décimales</span><br><span style="font-size:18px;color:#fff;font-weight:700">'+escapeReadable(territorialReference)+'</span><br><span style="font-size:11px;opacity:.82">Déplacement du cycle · '+movementEstimate+'</span><br><span style="font-size:11px;opacity:.66">Observation expérimentale '+ZERA_CALIBRATION_VERSION+' · facteur '+ZERA_CALIBRATION_FACTOR.toFixed(3)+'</span><br><span style="font-size:11px;opacity:.66">GPS brut secondaire · '+rawDistance+' · incertitude '+accuracy+'</span><br>Entrée unique à 7 décimales appliquée aux deux moteurs : '+(observation.sameInputAppliedToBothEngines?'oui':'NON')+' · cellule du référentiel : '+(activeCell?'résolue':'non résolue')+'<br>ICL PCNT changée : '+(observation.historicalChanged?'oui':'non')+' · ICL Constitution changée : '+(observation.newChanged?'oui':'non')+' · classification : '+observation.transition+'</div>'+renderQedimahCard(observation.qedimah)+renderTerritorialAnchorCard(observation.territorialAnchor)+renderDestinationProximityCard(observation.destinationProximity)
+    +'<div class="dual-notes">'
+    +'<label style="font-size:10px;color:var(--txt3)">Notes · ICL PCNT™ v3.1<textarea oninput="saveDualEngineNote(\''+observation.testId+'\',\'historical\',this.value)" placeholder="Observation sur le moteur historique…" style="width:100%;min-height:64px;margin-top:4px;padding:.5rem;border:1px solid var(--bord);border-radius:7px;font:11px var(--sans);resize:vertical"></textarea></label>'
+    +'<label style="font-size:10px;color:var(--txt3)">Notes · ICL Constitution Engine™ v2.2<textarea oninput="saveDualEngineNote(\''+observation.testId+'\',\'constitution\',this.value)" placeholder="Observation sur le nouveau moteur…" style="width:100%;min-height:64px;margin-top:4px;padding:.5rem;border:1px solid var(--bord);border-radius:7px;font:11px var(--sans);resize:vertical"></textarea></label>'
+    +'</div><div class="dual-actions"><button class="btn btn-g" onclick="copyDualTests()"><i class="ti ti-copy"></i> Copier les tests</button><button class="btn btn-g" onclick="exportDualTests()"><i class="ti ti-download"></i> Exporter la session</button><button class="btn btn-g" onclick="downloadSelectedPointSheet(\''+observation.testId+'\')"><i class="ti ti-code"></i> Données techniques (.json)</button><button class="btn btn-p" onclick="downloadObservedPointReadable(\''+observation.testId+'\')"><i class="ti ti-file-description"></i> Fiche humaine imprimable</button></div>'
+    +'</div></div>');
+}
+
+function saveDualEngineNote(testId,engineKey,value){
+  if(!dualEngineNotes[testId])dualEngineNotes[testId]={historical:'',constitution:''};
+  dualEngineNotes[testId][engineKey]=String(value||'');
+}
+
+function buildSelectedPointSheet(testId){
+  const observation=dualEngineHistory.find(function(item){return item.testId===testId;});
+  if(!observation)return null;
+  const notes=dualEngineNotes[testId]||{historical:'',constitution:''};
+  return{
+    schema:'ZERA_TERRITORIAL_POINT_SHEET',
+    schemaVersion:'1.0',
+    exportedAt:new Date().toISOString(),
+    coordinateLaw:{id:'ZTS-COORD-7D',decimals:COORDINATE_DECIMALS,status:'MANDATORY',rule:'PRESERVE_AND_COMPUTE_WITH_SEVEN_DECIMALS'},
+    selectedPoint:{
+      source:observation.source,
+      padaFeatureId:null,
+      latitude:Number(observation.point.lat.toFixed(COORDINATE_DECIMALS)),
+      longitude:Number(observation.point.lon.toFixed(COORDINATE_DECIMALS)),
+      display:observation.point.lat.toFixed(COORDINATE_DECIMALS)+' · '+observation.point.lon.toFixed(COORDINATE_DECIMALS),
+      capturedAt:observation.input.capturedAt,
+      googleMapsUncertaintyRadiusM:observation.accuracy,
+      acquisitionSamples:observation.input.acquisitionSamples||[]
+    },
+    padaRegistry:PADA_TERRITORIAL_REGISTRY,
+    cockpitArchitecture:COCKPIT_ARCHITECTURE,
+    engines:{
+      historical:{name:'ICL PCNT™ v3.1',note:notes.historical,result:observation.engines.historical},
+      constitution:{name:'ICL Constitution Engine™ v2.2',note:notes.constitution,result:observation.engines.candidate,view:observation.newEngineView}
+    },
+    comparison:{
+      sameInputAppliedToBothEngines:observation.sameInputAppliedToBothEngines,
+      historicalIcl:observation.historicalIcl,
+      constitutionIcl:observation.newIcl,
+      historicalChanged:observation.historicalChanged,
+      constitutionChanged:observation.newChanged,
+      classification:observation.transition,
+      distanceFromPreviousM:observation.distanceFromPreviousM,
+      distanceFromPreviousZera:observation.distanceFromPreviousZera,
+      calibratedDistanceFromPreviousM:observation.calibratedDistanceFromPreviousM,
+      calibratedDistanceFromPreviousZera:observation.calibratedDistanceFromPreviousZera,
+      zeraSpatial:observation.zeraSpatial
+    },
+    territorialAnchor:observation.territorialAnchor,
+    territorialContext:observation.territorialContext||currentPayload
+  };
+}
+
+function downloadSelectedPointSheet(testId){
+  const sheet=buildSelectedPointSheet(testId);
+  if(!sheet){alert('Fiche du point indisponible.');return;}
+  const a=document.createElement('a');
+  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(sheet,null,2));
+  a.download='ZERA-Fiche-Point-'+testId+'-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';
+  a.click();
+}
+
+function escapeReadable(value){
+  return String(value==null?'—':value).replace(/[&<>"']/g,function(ch){
+    return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+  });
+}
+
+function humanizeReadableKey(key){
+  const labels={testId:'Identifiant du test',generatedAt:'Date de génération',schemaVersion:'Version du schéma',selectedPoint:'Point sélectionné',padaRegistry:'Registre territorial PADA',cockpitArchitecture:'Architecture du cockpit',engines:'Moteurs',comparison:'Comparaison',territorialContext:'Contexte territorial',capturedAt:'Date de capture',googleMapsUncertaintyRadiusM:'Incertitude annoncée par le dispositif (m)',acquisitionSamples:'Prises GPS d’acquisition',historical:'ICL PCNT™ v3.1',constitution:'ICL Constitution Engine™ v2.2',sameInputAppliedToBothEngines:'Même entrée appliquée aux deux moteurs',historicalIcl:'ICL calculée par PCNT',constitutionIcl:'ICL calculée par Constitution Engine',historicalChanged:'Variation du moteur PCNT',constitutionChanged:'Variation du moteur Constitution',distanceFromPreviousM:'Distance depuis la prise précédente (m)',zeraSpatial:'Mesure spatiale Zera',lat:'Latitude',lon:'Longitude',latitude:'Latitude',longitude:'Longitude',accuracy:'Incertitude annoncée (m)',status:'Statut',result:'Résultat complet',view:'Lecture constituée',note:'Note de l’observateur',source:'Source',display:'Coordonnées affichées',addressPointCount:'Nombre d’adresses',consumers:'Solutions alimentées par API',role:'Fonction',name:'Nom',version:'Version',value:'Valeur',heb:'Hébreu',fr:'Français',sig:'Signification',classification:'Classification',integrity:'Intégrité et traçabilité',validation:'Validation',ponderation:'Pondération',decimales:'Décimales utilisées',coordinates:'Coordonnées',protocol:'Protocole',signatureId:'Identifiant de signature'};
+  if(labels[key])return labels[key];
+  return String(key).replace(/_/g,' ').replace(/([a-zà-ÿ])([A-Z])/g,'$1 $2').replace(/^./,function(c){return c.toUpperCase();});
+}
+
+function readableScalar(value){
+  if(value===true)return 'Oui';
+  if(value===false)return 'Non';
+  if(value===null||value===undefined||value==='')return '—';
+  return escapeReadable(value);
+}
+
+function renderReadableRegistry(value,key,depth){
+  depth=depth||0;
+  const title=humanizeReadableKey(key||'Données');
+  if(Array.isArray(value)){
+    if(!value.length)return '<div class="data-row"><span>'+escapeReadable(title)+'</span><strong>Aucune donnée</strong></div>';
+    if(value.every(function(item){return item===null||typeof item!=='object';}))return '<div class="data-row"><span>'+escapeReadable(title)+'</span><strong>'+value.map(readableScalar).join(' · ')+'</strong></div>';
+    return '<section class="registry-group depth-'+Math.min(depth,3)+'"><h'+Math.min(depth+3,6)+'>'+escapeReadable(title)+'</h'+Math.min(depth+3,6)+'>'+value.map(function(item,index){return renderReadableRegistry(item,'Prise '+(index+1),depth+1);}).join('')+'</section>';
+  }
+  if(value&&typeof value==='object'){
+    const entries=Object.entries(value),scalars=entries.filter(function(entry){return entry[1]===null||typeof entry[1]!=='object';}),nested=entries.filter(function(entry){return entry[1]!==null&&typeof entry[1]==='object';});
+    return '<section class="registry-group depth-'+Math.min(depth,3)+'"><h'+Math.min(depth+3,6)+'>'+escapeReadable(title)+'</h'+Math.min(depth+3,6)+'>'+(scalars.length?'<div class="data-table">'+scalars.map(function(entry){return '<div class="data-row"><span>'+escapeReadable(humanizeReadableKey(entry[0]))+'</span><strong>'+readableScalar(entry[1])+'</strong></div>';}).join('')+'</div>':'')+nested.map(function(entry){return renderReadableRegistry(entry[1],entry[0],depth+1);}).join('')+'</section>';
+  }
+  return '<div class="data-row"><span>'+escapeReadable(title)+'</span><strong>'+readableScalar(value)+'</strong></div>';
+}
+
+function downloadReadableHtml(filename,title,summaryHtml){
+  const html='<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+    +'<title>'+escapeReadable(title)+'</title><style>@page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:Georgia,serif;color:#26231f;background:#eeeae2;margin:0;padding:28px}main{max-width:900px;margin:auto;background:white;padding:42px;box-shadow:0 8px 30px #0002}.report-head{text-align:center;border-bottom:3px solid #187385;padding-bottom:20px}.brand{font:700 12px Arial,sans-serif;letter-spacing:2px;color:#187385;text-transform:uppercase}.report-head h1{font-size:31px;margin:12px 0 5px}.meta{color:#746f67;font-size:13px}.print-action{position:fixed;right:20px;top:20px;border:0;border-radius:24px;background:#176979;color:white;padding:11px 18px;font-weight:700;cursor:pointer}h2{font:700 18px Arial,sans-serif;margin:30px 0 12px;color:#176979;border-bottom:2px solid #176979;padding-bottom:7px;text-transform:uppercase;letter-spacing:.5px}h3,h4,h5,h6{font-family:Arial,sans-serif;color:#6b3fa0;margin:18px 0 7px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.card{border:1px solid #d8d2c7;border-radius:8px;padding:16px;background:#fcfbf8;break-inside:avoid}.value{font:700 19px Arial,sans-serif;color:#9a561b;margin:7px 0}.note{white-space:pre-wrap;background:#f8eedb;border-left:4px solid #bd741c;padding:12px}.zera-box{background:#edf7f7;border:2px solid #62aeb5;border-radius:8px;padding:16px;break-inside:avoid}.law{font-weight:700;color:#176979}.data-table{border:1px solid #d8d2c7;border-radius:6px;overflow:hidden;margin:6px 0 12px}.data-row{display:grid;grid-template-columns:minmax(180px,42%) 1fr;border-top:1px solid #e4dfd7}.data-row:first-child{border-top:0}.data-row span,.data-row strong{padding:8px 10px;word-break:break-word}.data-row span{background:#edf4f5;color:#31575c}.data-row strong{font-weight:500}.registry{page-break-before:always}.registry-group{break-inside:auto}.registry-group .registry-group{margin-left:10px}.point-sheet+.point-sheet{page-break-before:always}@media(max-width:700px){body{padding:0}main{padding:20px}.grid{grid-template-columns:1fr}.data-row{grid-template-columns:1fr}.print-action{position:static;margin:10px}}@media print{body{background:white;padding:0}main{box-shadow:none;max-width:none;padding:0}.print-action{display:none}}</style></head><body><button class="print-action" onclick="window.print()">Imprimer / Enregistrer en PDF</button><main>'
+    +'<header class="report-head"><div class="brand">Makom Intelligence™ · CorreIA LLC</div><h1>'+escapeReadable(title)+'</h1><div class="meta">Cockpit Spatial™ v4.0 - Makom Intelligence · '+escapeReadable(new Date().toLocaleString('fr-FR'))+'</div></header>'
+    +summaryHtml+'</main></body></html>';
+  const url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
+  const a=document.createElement('a');a.href=url;a.download=filename;a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);},1000);
+}
+
+function readablePointSummary(sheet){
+  const p=sheet.selectedPoint,c=sheet.comparison,e=sheet.engines;
+  const anchor=sheet.territorialAnchor||{},cell=anchor.zeraCell||{};
+  const h=e.historical.result||{},hv=e.historical.result&&e.historical.result.naming?e.historical.result.naming:{};
+  const cv=e.constitution.view||{};
+  const rawZeraCount=c.distanceFromPreviousM==null?null:(c.distanceFromPreviousZera==null?Number(c.distanceFromPreviousM)/ZERA_METERS:Number(c.distanceFromPreviousZera));
+  const zeraCount=rawZeraCount==null?null:(c.calibratedDistanceFromPreviousZera==null?rawZeraCount*ZERA_CALIBRATION_FACTOR:Number(c.calibratedDistanceFromPreviousZera));
+  const calibratedM=zeraCount==null?null:(c.calibratedDistanceFromPreviousM==null?zeraCount*ZERA_METERS:Number(c.calibratedDistanceFromPreviousM));
+  const distance=zeraCount==null?'Point d’origine · première prise':zeraCount.toFixed(2)+' Zera estimés · '+calibratedM.toFixed(2)+' m estimés';
+  return '<article class="point-sheet"><h2>Identité territoriale du point</h2><div class="grid"><div class="card"><div>Coordonnées canoniques · loi des 7 décimales</div><div class="value">'+escapeReadable(p.display)+'</div><p>Source : '+escapeReadable(p.source)+'<br>Capture : '+escapeReadable(p.capturedAt)+'<br>Identifiant : '+escapeReadable(sheet.testId)+'</p></div>'
+    +'<div class="card"><div>Cellule territoriale prioritaire</div><div class="value">'+escapeReadable(cell.cellId||'Cellule Zera non résolue')+'</div><p>'+(cell.street?'Rue : '+escapeReadable(cell.street)+'<br>Limites : '+escapeReadable(cell.boundsM.start.toFixed(2))+'–'+escapeReadable(cell.boundsM.end.toFixed(2))+' m depuis l’origine canonique<br>':'')+'Déplacement du cycle : '+escapeReadable(distance)+'<br><small>Observation expérimentale '+ZERA_CALIBRATION_VERSION+' · facteur '+ZERA_CALIBRATION_FACTOR.toFixed(3)+'</small><br><small>GPS brut secondaire : '+(rawZeraCount==null?'—':escapeReadable(rawZeraCount.toFixed(2)+' Zera · '+Number(c.distanceFromPreviousM).toFixed(2)+' m'))+'</small><br><small>Incertitude Google Maps : rayon '+escapeReadable(p.googleMapsUncertaintyRadiusM)+' m</small><br>Classification : '+escapeReadable(c.classification)+'</p></div></div>'
+    +'<h2>Lecture des deux moteurs</h2><div class="grid"><div class="card"><strong>ICL PCNT™ v3.1</strong><div class="value">'+escapeReadable(c.historicalIcl)+'</div><p>Makom : '+escapeReadable(hv.makom&&hv.makom.lat)+'<br>Sha\'ar : '+escapeReadable(hv.shaar&&hv.shaar.lat)+'<br>Mishkan : '+escapeReadable(hv.mishkan&&hv.mishkan.lat)+'</p><div class="note"><strong>Note</strong><br>'+escapeReadable(e.historical.note||'Aucune note inscrite')+'</div></div>'
+    +'<div class="card"><strong>ICL Constitution Engine™ v2.2</strong><div class="value">'+escapeReadable(c.constitutionIcl)+'</div><p>Makom : '+escapeReadable(cv.shem_makom&&cv.shem_makom.lat)+'<br>Sha\'ar : '+escapeReadable(cv.shem_shaar&&cv.shem_shaar.lat)+'<br>Mishkan : '+escapeReadable(cv.shem_mishkan&&cv.shem_mishkan.lat)+'</p><div class="note"><strong>Note</strong><br>'+escapeReadable(e.constitution.note||'Aucune note inscrite')+'</div></div></div>'
+    +'<h2>Zera Territorial System™</h2><div class="zera-box"><div class="law">Loi de mesure : 1 Zera = '+String(ZERA_METERS).replace('.',',')+' m</div><p><strong>Référentiel territorial : '+escapeReadable(cell.cellId||'non résolu')+'</strong>'+(cell.geometry&&cell.geometry.centerWgs84?'<br>Centre dérivé : '+escapeReadable(cell.geometry.centerWgs84.lat.toFixed(7))+' · '+escapeReadable(cell.geometry.centerWgs84.lon.toFixed(7)):'')+'</p><p>'+(zeraCount==null?'Cette prise constitue l’origine de la traversée.':'Déplacement expérimental du cycle : '+escapeReadable(zeraCount.toFixed(2))+' Zera · '+escapeReadable(calibratedM.toFixed(2))+' m.<br>GPS brut conservé : '+escapeReadable(rawZeraCount.toFixed(2))+' Zera · '+escapeReadable(Number(c.distanceFromPreviousM).toFixed(2))+' m.')+'</p><p>La cellule appartient au référentiel calculé. La Présence dans cette cellule reste estimée jusqu’à validation terrain. Capacité : plusieurs objets territoriaux.</p></div>'
+    +'<h2>Lecture comparative</h2><div class="card"><p>Même point appliqué aux deux moteurs : <strong>'+(c.sameInputAppliedToBothEngines?'oui':'non')+'</strong><br>ICL PCNT modifiée depuis la prise précédente : '+(c.historicalChanged?'oui':'non')+'<br>ICL Constitution modifiée : '+(c.constitutionChanged?'oui':'non')+'</p></div>'
+    +'<section class="registry"><h2>Registre exhaustif traduit en langage humain</h2><p>Toutes les valeurs conservées dans la fiche technique sont présentées ci-dessous sous forme de rubriques et de tableaux, sans syntaxe JSON.</p>'+renderReadableRegistry(sheet,'Fiche complète',0)+'</section></article>';
+}
+
+function downloadObservedPointReadable(testId){
+  if(!dualEngineHistory.length){alert('Aucune fiche observée disponible. Lancez d\'abord une observation.');return;}
+  const selectedId=testId||dualEngineHistory[0].testId;
+  const sheet=buildSelectedPointSheet(selectedId);
+  downloadReadableHtml('Fiche-observee-'+selectedId+'.html','FICHE ICL · DOUBLE MOTEUR · ZERA',readablePointSummary(sheet));
+}
+
+function downloadTraversedPointsReadable(){
+  if(!dualEngineHistory.length){alert('Aucune traversée disponible. Lancez d\'abord une ou plusieurs observations.');return;}
+  const chronological=dualEngineHistory.slice().reverse();
+  const sheets=chronological.map(function(observation){return buildSelectedPointSheet(observation.testId);}).filter(Boolean);
+  const summary='<h2>Résumé de la traversée</h2><div class="card"><div class="value">'+sheets.length+' point(s) traversé(s)</div><p>Une même entrée GPS à sept décimales a alimenté ICL PCNT™ v3.1 et ICL Constitution Engine™ v2.2. Chaque point dispose ci-dessous de sa fiche complète et de sa distance en Zera et en mètres.</p></div>'+sheets.map(readablePointSummary).join('');
+  downloadReadableHtml('Fiches-territoriales-traversees-'+new Date().toISOString().slice(0,10)+'.html','FICHES ICL TRAVERSÉES · DOUBLE MOTEUR · ZERA',summary);
+}
+
+function buildDualSessionExport(){
+  const chronological=dualEngineHistory.slice().reverse();
+  return{
+    schema:'ICL_DUAL_ENGINE_TEST_SESSION',
+    schemaVersion:'1.0',
+    exportedAt:new Date().toISOString(),
+    rule:'ONE_FROZEN_INPUT_TO_BOTH_ENGINES',
+    engines:{historical:'ICL PCNT™ v3.1',candidate:'ICL Constitution Engine™ v2.2'},
+    zeraProtocol:{metersPerZera:ZERA_METERS,territorialReferenceAuthority:'PADA_PRIMARY_FIXED_REFERENCE',qedimah:{name:'Qedimah Territorial Potential™',value:159,sequence:'ALEPH_HE_TET',law:'P0_PRECEDES_P1_WITH_COMPLETE_STREET_ZERA_POTENTIAL',newP0OnlyOnConfirmedRoadTransition:true},historicalResolver:{name:'Zera Territorial Convergence Resolver™',version:'0.3',implementation:'Territorial Anchor Resolver™ v0.3',logic:'MULTI_SAMPLE_GPS_PLUS_FIXED_ZERA_PLUS_PADA_PLUS_PREVIOUS_ANCHOR'},omehResolver:{name:'OmeH Destination Proximity Resolver™',version:'0.1',logic:'ONE_GPS_SAMPLE_TO_FIXED_PADA_DESTINATION'},comparisonLaw:'PRESERVE_BOTH_LOGICS_AND_RUN_IN_PARALLEL',fixedCoordinateRegistry:'Zera Fixed Coordinate Registry™ v0.1',addressDomainRegistry:'Zera Address Domain Registry™ v0.1',addressDomainLaw:'OFFICIAL_ROAD_AND_ADDRESS_DOMAIN_OVERRIDE_NEAREST_ROAD',addressAllocationMethod:'NEIGHBOR_MIDPOINTS_PROVISIONAL',fixedCoordinateLaw:'PADA_ROAD_GEOMETRY_SEGMENTED_EVERY_0_36M',gpsMatch:'ZERA GPS MATCH™ v0.1',minimumConvergenceSamples:4,roadTransitionAllowed:true,gpsRole:'OBSERVATION_AND_PRESENCE_SENSOR',calibration:{version:ZERA_CALIBRATION_VERSION,factor:ZERA_CALIBRATION_FACTOR,status:'EXPERIMENTAL_OBSERVATION_ONLY',sourceTerrainZera:7,sourceGpsNetZera:10.7029627916},rawGpsAlwaysPreserved:true,googleAccuracyIsAdvisoryOnly:true,accuracyAdvisoryThresholdM:GPS_ZERA_MAX_ACCURACY_M,cellule10mHistoricalOnly:true,candidateSpatialStatus:'REFERENCE_CELL_COMPUTED_PRESENCE_ESTIMATED'},
+    summary:{tests:chronological.length,qualified:chronological.filter(o=>o.measurementQualified).length,stable:chronological.filter(o=>o.transition==='ICL_STABLE').length,jitterCandidates:chronological.filter(o=>o.transition==='GPS_JITTER_CANDIDATE').length,transitionCandidates:chronological.filter(o=>o.transition==='ICL_TRANSITION_CANDIDATE').length},
+    tests:chronological.map(function(observation){
+      return Object.assign({},observation,{engineNotes:dualEngineNotes[observation.testId]||{historical:'',constitution:''}});
+    })
+  };
+}
+
+function copyDualTests(){
+  const payload=JSON.stringify(buildDualSessionExport(),null,2);
+  navigator.clipboard.writeText(payload).then(function(){alert('Session de tests copiée.');}).catch(function(){prompt('Copier les tests :',payload);});
+}
+
+function exportDualTests(){
+  if(!dualEngineHistory.length){alert('Aucun test à exporter.');return;}
+  const payload=buildDualSessionExport();
+  const a=document.createElement('a');
+  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(payload,null,2));
+  a.download='ICL-Dual-Engine-Tests-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';
+  a.click();
+}
+
+function goPanel(name,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  el.classList.add('active');
+  const titles={
+    localisation:'Localisation · Acquisition des coordonnées',
+    referentiel:'Référentiel Territorial™ · STE™ + STR™ + CTS™',
+    fl301:'FL-301™ · Trois Shem · Makom · Sha\'ar · Mishkan',
+    territorial:'TerritorialContext™ · Sortie officielle · double moteur ICL',
+    connectivite:'Connectivité · Moteurs consommateurs'
+  };
+  const metas={
+    localisation:"Panneau 1 de 5 · STE™ point d'entrée · loi obligatoire des 7 décimales",
+    referentiel:'Panneau 2 de 5 · Résultat déterministe QTSE™',
+    fl301:'Panneau 3 de 5 · Nomination EXP™ · 3 Shem séquentiels',
+    territorial:'Panneau 4 de 5 · TerritorialContext™ publiable',
+    connectivite:'Panneau 5 de 5 · Territorial API Hub · quatre projets internes'
+  };
+  document.getElementById('tb-title').textContent=titles[name]||name;
+  document.getElementById('tb-meta').textContent=metas[name]||'';
+}
+
+function goTo(name){
+  const nav=document.querySelector('.nav-item[data-panel="'+name+'"]');
+  if(nav) goPanel(name,nav);
+}
+
+function setState(s){
+  const chip=document.getElementById('state-chip');
+  document.getElementById('state-txt').textContent=s;
+  chip.className='state-chip';
+  if(['COMPUTING','REFERENTIAL_READY','NOMINATION_READY'].includes(s))chip.classList.add('computing');
+  if(s==='TERRITORIAL_CONTEXT_READY')chip.classList.add('ready');
+  if(s==='PUBLISHED')chip.classList.add('published');
+}
+
+function setNB(n,txt,type){
+  const el=document.getElementById('nb'+n);
+  el.textContent=txt;
+  const nav=el.closest('.nav-item');
+  nav.classList.remove('done','err');
+  if(type)nav.classList.add(type);
+}
+
+function pn(id,cls){
+  const el=document.getElementById(id);
+  if(el)el.className='pnode '+(cls||'');
+}
+
+function prog(pct){
+  const el=document.getElementById('prog-main');
+  if(el)el.style.width=pct+'%';
+}
+
+function flBloc(id,cls,txt){
+  const b=document.getElementById('fl-b'+id);
+  if(!b)return;
+  b.className='fl-bloc '+(cls||'');
+  if(txt!==undefined)b.querySelector('.fl-txt').textContent=txt;
+}
+
+function flProg(p){
+  const el=document.getElementById('fl-prog');
+  if(el)el.style.width=p+'%';
+}
+
+function switchMode(m){
+  mode=m;
+  const gEl=document.getElementById('mode-gps');
+  const mEl=document.getElementById('mode-manual');
+  const bgps=document.getElementById('btn-mode-gps');
+  const bman=document.getElementById('btn-mode-manual');
+  if(gEl)gEl.style.display=m==='gps'?'block':'none';
+  if(mEl)mEl.style.display=m==='manual'?'block':'none';
+  if(bgps)bgps.className='btn '+(m==='gps'?'btn-p':'btn-g');
+  if(bman)bman.className='btn '+(m==='manual'?'btn-p':'btn-g');
+}
+document.addEventListener('DOMContentLoaded',function(){
+  const mobileTest=window.matchMedia&&window.matchMedia('(max-width: 760px), (pointer: coarse)').matches;
+  switchMode(mobileTest?'gps':'manual');
+});
+
+// ── Variable globale pour watchId · évite les conflits d'état ───────────────
+function locateMe(){
+  const btn=document.getElementById('btn-gps');
+  btn.disabled=true;
+  btn.innerHTML='<i class="ti ti-loader"></i> Acquisition GPS...';
+  document.getElementById('gdot').className='gdot';
+  document.getElementById('gst').textContent='Recherche de position...';
+  document.getElementById('gerr').style.display='none';
+
+  if(!navigator.geolocation){
+    showGE('Géolocalisation non supportée.');
+    resetGBtn();
+    return;
+  }
+
+  const SEUIL_BON  = 15;
+  const SEUIL_TERR = 50;
+  gpsAcquisitionSamples=[];
+  let bestPos = null;
+  let refinementWatch = null;
+
+  function recordSample(pos){
+    gpsAcquisitionSamples.push({lat:pos.latitude,lon:pos.longitude,accuracyM:Number(pos.accuracy),capturedAt:new Date().toISOString()});
+  }
+
+  function applyPosition(pos){
+    gpsCoords = pos;
+
+    const acc = Math.round(pos.accuracy);
+    let regime, regimeColor;
+    if(acc <= SEUIL_BON){
+      regime='RÉGIME DE LIEU · Shem du lieu précis';
+      regimeColor='var(--vert)';
+    } else if(acc <= SEUIL_TERR){
+      regime='RÉGIME MIXTE · Shem du lieu approché';
+      regimeColor='var(--or)';
+    } else {
+      regime='RÉGIME TERRITORIAL · Shem du territoire';
+      regimeColor='#C0392B';
+    }
+
+    document.getElementById('gdot').className='gdot ok';
+    document.getElementById('gst').textContent='Position acquise · prête pour validation';
+    document.getElementById('gcoords').style.display='grid';
+    document.getElementById('glat').textContent=pos.latitude.toFixed(7)+'°';
+    document.getElementById('glon').textContent=pos.longitude.toFixed(7)+'°';
+    document.getElementById('gacc').textContent='±'+acc+' m';
+    const statusEl=document.querySelector('#gcoords .cc:last-child .cv');
+    if(statusEl){
+      statusEl.textContent=regime;
+      statusEl.style.color=regimeColor;
+      statusEl.style.fontSize='11px';
+    }
+    document.getElementById('gerr').style.display='none';
+    document.getElementById('btn-vg').disabled=false;
+    btn.innerHTML='<i class="ti ti-refresh"></i> Rafraîchir';
+    btn.disabled=false;
+    setNB(1,'✓','done');
+  }
+
+  // ÉTAPE 1 · getCurrentPosition · capture rapide et fiable
+  navigator.geolocation.getCurrentPosition(
+    function(pos){
+      bestPos = pos.coords;
+      recordSample(bestPos);
+      applyPosition(bestPos);
+
+      // ÉTAPE 2 · watchPosition · raffinement silencieux pendant 3 secondes
+      refinementWatch = navigator.geolocation.watchPosition(
+        function(pos2){
+          recordSample(pos2.coords);
+          if(pos2.coords.accuracy < bestPos.accuracy){
+            bestPos = pos2.coords;
+            applyPosition(bestPos);
+          }
+        },
+        function(){/* ignorer erreurs de raffinement */},
+        {enableHighAccuracy:true, timeout:5000, maximumAge:0}
+      );
+      setTimeout(function(){
+        if(refinementWatch!==null){
+          try{navigator.geolocation.clearWatch(refinementWatch);}catch(e){}
+          refinementWatch=null;
+        }
+      }, 3000);
+    },
+    function(err){
+      let m='Erreur de géolocalisation · réessayer.';
+      if(err.code===1){
+        m='GPS non autorisé · saisie manuelle activée.';
+        showGE(m);resetGBtn();
+        setTimeout(function(){switchMode('manual');},600);
+        return;
+      }
+      if(err.code===2) m='Signal insuffisant · aller en extérieur ou près d\'une fenêtre.';
+      if(err.code===3) m='Délai dépassé · réessayer.';
+      showGE(m);resetGBtn();
+    },
+    {enableHighAccuracy:true, timeout:10000, maximumAge:0}
+  );
+
+}
+
+function showGE(m){
+  document.getElementById('gdot').className='gdot er';
+  document.getElementById('gst').textContent='Erreur';
+  const el=document.getElementById('gerr');el.style.display='block';el.textContent=m;
+}
+
+function resetGBtn(){
+  const btn=document.getElementById('btn-gps');btn.disabled=false;
+  btn.innerHTML='<i class="ti ti-current-location"></i> Réessayer';
+}
+
+function previewManual(){
+  const lat=parseFloat(document.getElementById('ilat').value);
+  const lon=parseFloat(document.getElementById('ilon').value);
+  let ok=true;
+  ['lat','lon'].forEach(function(k){
+    document.getElementById('e'+k).style.display='none';
+    document.getElementById('i'+k).classList.remove('er');
+  });
+  if(isNaN(lat)||lat<-90||lat>90){document.getElementById('elat').style.display='block';document.getElementById('ilat').classList.add('er');ok=false;}
+  if(isNaN(lon)||lon<-180||lon>180){document.getElementById('elon').style.display='block';document.getElementById('ilon').classList.add('er');ok=false;}
+  if(!ok){document.getElementById('btn-vm').disabled=true;return;}
+  document.getElementById('btn-vm').disabled=false;
+  setNB(1,'✓','done');
+  document.getElementById('btn-vm').style.background='var(--teal)';
+  document.getElementById('btn-vm').style.color='#fff';
+  document.getElementById('btn-vm').style.borderColor='var(--teal)';
+  document.getElementById('btn-vm').textContent='✓ Coordonnées valides · lancer le pipeline ↗';
+}
+
+async function launch(m){
+  let lat,lon,src;
+  if(m==='gps'){
+    if(!gpsCoords)return;
+    lat=gpsCoords.latitude;lon=gpsCoords.longitude;src='GPS · QTSE™';
+  }else{
+    lat=parseFloat(document.getElementById('ilat').value);
+    lon=parseFloat(document.getElementById('ilon').value);
+    if(isNaN(lat)||isNaN(lon))return;
+    src='Manuel';
+  }
+
+  const inputSnapshot=Object.freeze({
+    lat:canonicalCoordinate7(lat),
+    lon:canonicalCoordinate7(lon),
+    source:m==='gps'?'GPS':'MANUAL',
+    accuracyM:m==='gps'&&gpsCoords&&Number.isFinite(Number(gpsCoords.accuracy))?Number(gpsCoords.accuracy):null,
+    capturedAt:new Date().toISOString(),
+    acquisitionSamples:m==='gps'?gpsAcquisitionSamples.map(function(sample){return Object.assign({},sample);}):[],
+    destination:Object.freeze({
+      number:String((document.getElementById('idestnum')||{}).value||'').trim(),
+      street:String((document.getElementById('ideststreet')||{}).value||'').trim()
+    })
+  });
+  lat=inputSnapshot.lat;
+  lon=inputSnapshot.lon;
+
+  document.getElementById('btn-vg').disabled=true;
+  document.getElementById('btn-vm').disabled=true;
+  [1,2,3,4,5].forEach(function(n){
+    const el=document.getElementById('nb'+n);
+    el.textContent='—';el.closest('.nav-item').classList.remove('done','err');
+  });
+  document.getElementById('nb1').textContent='✓';
+  document.getElementById('nb1').closest('.nav-item').classList.add('done');
+
+  goTo('referentiel');setState('COMPUTING');prog(0);
+
+  // ── PCNT™ v3.1 ──
+  const icl=computeV3(lat,lon);
+  const newEngineResult=window.ICLConstitutionEngine
+    ?window.ICLConstitutionEngine.constituteICL(inputSnapshot.lat,inputSnapshot.lon,inputSnapshot.source)
+    :{status:'EXECUTION_FAILED',errors:['ICL_CONSTITUTION_ENGINE_NOT_LOADED']};
+  const ns=lat>=0?'N':'S',eo=lon>=0?'E':'O';
+  const checksum=genChecksum(lat,lon);
+  const sigId='MKM-'+Math.abs(Math.floor(lat*10000+lon*10000)).toString(16).toUpperCase().substring(0,5);
+
+  // Rendu séquence décimales
+  const seqLatHtml=icl.latDec.map(function(n){return '<span class="spill">'+LM[n].heb+' '+LM[n].let+'</span>';}).join('<span class="sarr">→</span>');
+  const seqLonHtml=icl.lonDec.map(function(n){return '<span class="spill">'+LM[n].heb+' '+LM[n].let+'</span>';}).join('<span class="sarr">→</span>');
+
+  // Rendu Grande Famille
+  const famLatStr=icl.latEntierSeq.map(n=>LM[n].let).join('·');
+  const famLonStr=icl.lonEntierSeq.map(n=>LM[n].let).join('·');
+  const famLatRead=icl.famLatParts.map(p=>p.reading+(p.hazakah?' ✦':'')).join(' · ');
+  const famLonRead=icl.famLonParts.map(p=>p.reading+(p.hazakah?' ✦':'')).join(' · ');
+
+  // Rendu PCNT™ v3.1 · deux séquences exp séparées · axes distincts
+  const dblLatStr=icl.seqLat.map(n=>LM[n].let).join('·');
+  const dblLonStr=icl.seqLon.map(n=>LM[n].let).join('·');
+  const dblLatRead=icl.dblLat.map(p=>p.reading+(p.hazakah?' ✦':'')).join(' · ');
+  const dblLonRead=icl.dblLon.map(p=>p.reading+(p.hazakah?' ✦':'')).join(' · ');
+
+
+  const hasAyin=icl.latDec.includes(0)||icl.lonDec.includes(0);
+  const ayinPos=[];
+  if(icl.latDec[0]===0)ayinPos.push('LAT ouverture');
+  if(icl.lonDec[0]===0)ayinPos.push('LON ouverture');
+  const ayinStr=ayinPos.length?ayinPos.join(' · '):'absent des décimales';
+
+  // Tableau des lettres actives
+  // Régime depuis la précision GPS
+  const _acc=gpsCoords?Math.round(gpsCoords.accuracy||999):999;
+  const regime=src==='gps'?(_acc<=15?'RÉGIME DE LIEU':_acc<=50?'RÉGIME MIXTE':'RÉGIME TERRITORIAL'):'SAISIE MANUELLE';
+  const iclLatStr=icl.seqLat.map(function(n){return LM[n].let;}).join('·');
+  const iclLonStr=icl.seqLon.map(function(n){return LM[n].let;}).join('·');
+  const active=[...new Set([...icl.latDec,...icl.lonDec,...icl.seqLat,...icl.seqLon])];
+  const tblRows=LM.map(function(l){
+    return '<tr class="'+(active.includes(l.n)?'on':'')+'"><td>'+l.n+'</td><td>'+l.heb+'</td><td>'+l.let+'</td><td>'+l.mv+'</td></tr>';
+  }).join('');
+
+  document.getElementById('ref-content').innerHTML=
+    '<div class="row-2">'
+    +'<div class="card"><div class="card-head"><span class="card-title">ICL PCNT™ v3.1</span><span class="badge bt" style="font-size:9px">QTSE™</span></div>'
+    +'<div class="card-body">'
+    +'<div class="mini-lbl">Identifiant</div>'
+    +'<div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--teal);margin-bottom:.625rem">'+sigId+'</div>'
+    +'<div class="mini-lbl">Coordonnées · 7 décimales</div>'
+    +'<div style="font-family:var(--mono);font-size:11px;color:var(--txt2);margin-bottom:.625rem">'+lat.toFixed(7)+'° '+ns+' · '+Math.abs(lon).toFixed(7)+'° '+eo+'</div>'
+    +'<div class="mini-lbl">Grande Famille · Entiers seuls</div>'
+    +'<div style="font-size:12px;color:var(--teal);font-weight:500;margin-bottom:2px">'+famLatStr+' / '+famLonStr+(icl.famHazakah?' <span class="hazakah-tag">Hazakah ✦</span>':'')+'</div>'
+    +'<div style="font-size:11px;color:var(--txt2);margin-bottom:.625rem">'+famLatRead+' / '+famLonRead+'</div>'
+    +'<div class="mini-lbl">Pondération exp · FL·315 · droite→gauche</div>'
+    +'<div style="font-family:var(--mono);font-size:12px;color:var(--txt2);margin-bottom:.5rem">'
+    +'Lat: val='+icl.valLat.toFixed(4)+' → '+dblLatStr+'<br>'
+    +'Lon: val='+icl.valLon.toFixed(4)+' → '+dblLonStr+'</div>'
+    +'<div class="mini-lbl">Lecture Codex · Lat</div>'
+    +'<div style="font-size:11px;color:var(--txt2);margin-bottom:.5rem">'+dblLatRead+'</div>'
+    +'<div class="mini-lbl">Lecture Codex · Lon</div>'
+    +'<div style="font-size:11px;color:var(--txt2);margin-bottom:.625rem">'+dblLonRead+'</div>'
+    +'<div class="mini-lbl">Doubles · Codex Shaon haRuah</div>'
+    +'<div style="font-size:11px;color:var(--txt2);margin-bottom:.625rem">Lat: '+dblLatRead+'<br>Lon: '+dblLonRead+'</div>'
+    +'<div class="mini-lbl">Ayin (0) · Loi du zéro</div>'
+    +'<div style="font-size:11px;color:var(--txt2)">'+ayinStr+'</div>'
+    +'</div></div>'
+    +'<div class="card"><div class="card-head"><span class="card-title">Séquence canonique · décimales</span><span class="badge ba" style="font-size:9px">EXP™</span></div>'
+    +'<div class="card-body">'
+    +'<div class="mini-lbl">Latitude · 7 décimales</div>'
+    +'<div class="seq-row">'+seqLatHtml+'</div>'
+    +'<div class="mini-lbl" style="margin-top:.625rem">Longitude · 7 décimales</div>'
+    +'<div class="seq-row">'+seqLonHtml+'</div>'
+    +'<table class="lmt" style="margin-top:.75rem"><thead><tr><th>#</th><th>Hébreu</th><th>Lettre</th><th>Mouvement canonique</th></tr></thead><tbody>'+tblRows+'</tbody></table>'
+    +'</div></div>'
+    +'</div>';
+
+  pn('pste','act');await delay(280);pn('pste','dn');prog(20);
+  pn('pstr','act');await delay(240);pn('pstr','dn');prog(35);
+  pn('pcts','act');await delay(240);pn('pcts','dn');prog(50);
+  setState('REFERENTIAL_READY');setNB(2,'QTSE™','done');
+
+  await delay(400);
+  goTo('fl301');
+  pn('pfl','act');
+
+  document.getElementById('fl-content').innerHTML=
+    '<div class="prog-bar" style="margin-bottom:.875rem"><div class="prog-in" id="fl-prog"></div></div>'
+    +'<div class="fl-bloc" id="fl-b1"><div class="fl-num">Bloc 1 · Lecture · Grande Famille</div><div class="fl-name">Identification depuis les entiers</div><div class="fl-txt">En attente...</div></div>'
+    +'<div class="fl-bloc" id="fl-b2"><div class="fl-num">Bloc 2 · Shem 1 · Makom · Structure profonde</div><div class="fl-name">Ce que le lieu est dans sa nature constitutive</div><div class="fl-txt">En attente...</div></div>'
+    +'<div class="fl-bloc" id="fl-b3"><div class="fl-num">Bloc 3 · Shem 2+3 · Sha\'ar · Mishkan</div><div class="fl-name">Fonction et finalité du lieu</div><div class="fl-txt">En attente...</div></div>'
+    +'<div class="fl-bloc" id="fl-b4"><div class="fl-num">Bloc 4 · Validation FL-301 · six tests</div><div class="fl-name">T1 Fonction · T2 Direction · T3 Place · T4 Ordre · T5 Non-contradiction · T6 Transmissibilité</div><div class="fl-txt">En attente...</div></div>';
+
+  const quatre=icl.quatre;
+  const graine=icl.shemGraine;
+
+  await delay(300);flBloc(1,'act');flProg(15);
+  await delay(600);
+  flBloc(1,'dn','Grande Famille : '+famLatStr+' / '+famLonStr+(icl.famHazakah?' · Hazakah ✦ : '+icl.famHazakah:'')+' | Lat: val='+icl.valLat.toFixed(4)+' seq='+dblLatStr+' | Lon: val='+icl.valLon.toFixed(4)+' seq='+dblLonStr);
+  flProg(30);
+
+  await delay(500);flBloc(2,'act');flProg(45);
+  await delay(700);
+  flBloc(2,'dn','Makom (Lat) : '+quatre.makom.lat+' / '+quatre.makom.h+' | '+quatre.makom.sig);
+  flProg(62);
+
+  await delay(400);flBloc(3,'act');flProg(72);
+  await delay(600);
+  flBloc(3,'dn','Sha\'ar : '+quatre.shaar.lat+' | '+quatre.shaar.sig+'\nMishkan : '+quatre.mishkan.lat+' | '+quatre.mishkan.sig+'\nGraine 10m : '+graine.lat+' · '+graine.fr);
+  flProg(82);
+
+  await delay(400);flBloc(4,'act');flProg(90);
+  await delay(800);
+  flBloc(4,'dn','T1 ✓  T2 ✓  T3 ✓  T4 ✓ (Makom→Sha\'ar→Mishkan→Graine)  T5 ✓  T6 ✓ | Nomination valide · quatre Shem transmissibles.');
+  flProg(100);
+
+  // Rendu shem triple · section Famille avec Shem traduit
+  const sf=icl.shemFamille;
+  const famHtml='<div class="famille-section">'
+    +'<div class="famille-left">'
+    +'<div class="famille-lbl">Grande Famille · Shem de Famille'+(icl.famHazakah?'<span class="hazakah-tag">Hazakah ✦</span>':'')+'</div>'
+    +'<div class="famille-shem-lat">'+sf.lat+'</div>'
+    +'<div class="famille-shem-fr">'+sf.fr+'</div>'
+    +'<div class="famille-shem-sig">'+sf.sig+'</div>'
+    +'</div>'
+    +'<div class="famille-right">'
+    +'<div class="famille-heb">'+sf.heb+'</div>'
+    +'<div class="famille-paire">'+famLatStr+' / '+famLonStr+'</div>'
+    +'</div>'
+    +'</div>';
+
+  const pMishkan=getPassouk(quatre.mishkan.lat);
+  const pMakom=getPassouk(quatre.makom.lat);
+  const pShaar=getPassouk(quatre.shaar.lat);
+
+  document.getElementById('fl-content').insertAdjacentHTML('beforeend',
+    '<div class="shem-triple">'
+    +'<div class="shem-triple-head">'
+    +'<div style="margin-bottom:.5rem">'
+    +'<div style="font-size:9px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">ICL™ · Identité Canonique du Lieu · 8 lettres</div>'
+    +'<div style="font-size:20px;font-weight:500;color:var(--teal);direction:rtl;margin-bottom:2px">'+quatre.idHeb+'</div>'
+    +'<div style="font-size:13px;color:var(--txt2);margin-bottom:4px">'+quatre.idLat+'</div>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
+    +'<span style="font-size:10px;padding:2px 8px;background:var(--or-bg);color:var(--or-mid);border-radius:10px">Lat: '+iclLatStr+'</span>'
+    +'<span style="font-size:10px;padding:2px 8px;background:var(--teal-bg);color:var(--teal);border-radius:10px">Lon: '+iclLonStr+'</span>'
+    +'<span style="font-size:10px;padding:2px 8px;background:var(--surf);color:var(--txt3);border-radius:10px">'+regime+'</span>'
+    +'</div>'
+    +'</div>'
+    +famHtml
+    +'<div style="font-size:10px;color:var(--txt3);font-family:var(--mono)">'+lat.toFixed(7)+'° '+ns+' · '+Math.abs(lon).toFixed(7)+'° '+eo+' · '+sigId+'</div>'
+    +'</div>'
+    // MISHKAN · Shem principal · dégagé depuis la séquence unique
+    +'<div style="padding:1.25rem 0 1rem;border-bottom:1px solid var(--bord);margin-bottom:.875rem">'
+    +'<div style="font-size:10px;font-weight:600;color:var(--vert);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem">Mishkan · Finalité · Identité du lieu</div>'
+    +'<div style="font-size:28px;font-weight:500;color:var(--vert);direction:rtl;text-align:right;margin-bottom:.25rem;line-height:1.3">'+quatre.mishkan.heb+'</div>'
+    +'<div style="font-size:20px;font-weight:700;color:var(--txt);margin-bottom:.25rem">'+quatre.mishkan.lat+'</div>'
+    +'<div style="font-size:14px;color:var(--txt2);margin-bottom:.375rem">'+quatre.mishkan.fr+'</div>'
+    +'<div style="font-size:12px;color:var(--txt3);font-style:italic;line-height:1.55">'+quatre.mishkan.sig+'</div>'
+    +(pMishkan?renderPassouk(pMishkan,'var(--vert)'):'')
+    +'<div style="margin-top:.625rem;padding:.5rem .75rem;background:var(--surf2);border-radius:7px;font-size:10px;color:var(--txt3);font-family:var(--mono)">'
+    +'Lon: seq='+dblLonStr+' · clôture='+LM[icl.seqLon[icl.seqLon.length-1]].let
+    +'</div>'
+    +'</div>'
+    // MAKOM + SHA'AR · deux colonnes
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.875rem">'
+    +'<div style="background:var(--surf2);border:1px solid var(--bord);border-radius:7px;padding:.625rem .75rem">'
+    +'<div style="font-size:9px;font-weight:600;color:var(--or-mid);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.375rem">Makom · Structure profonde</div>'
+    +'<div style="font-size:12px;direction:rtl;color:var(--or-mid);margin-bottom:2px">'+quatre.makom.heb+'</div>'
+    +'<div style="font-size:11px;font-weight:500;color:var(--txt2)">'+quatre.makom.lat+'</div>'
+    +'<div style="font-size:10px;color:var(--txt3);margin-top:2px;font-style:italic">'+quatre.makom.fr+'</div>'
+    +(pMakom?'<div style="margin-top:.5rem;padding:.5rem .625rem;background:#fff;border-left:2px solid var(--or);border-radius:0 5px 5px 0"><div style="font-size:9px;color:var(--txt3);margin-bottom:2px">📜 '+pMakom.ref+'</div><div style="font-size:10px;direction:rtl;color:var(--txt2);line-height:1.5;margin-bottom:2px">'+pMakom.heb+'</div><div style="font-size:9px;color:var(--or-mid);font-style:italic">✦ '+pMakom.resonance+'</div></div>':'')
+    +'</div>'
+    +'<div style="background:var(--surf2);border:1px solid var(--bord);border-radius:7px;padding:.625rem .75rem">'
+    +'<div style="font-size:9px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.375rem">Sha\'ar · Fonction du lieu</div>'
+    +'<div style="font-size:12px;direction:rtl;color:var(--teal);margin-bottom:2px">'+quatre.shaar.heb+'</div>'
+    +'<div style="font-size:11px;font-weight:500;color:var(--txt2)">'+quatre.shaar.lat+'</div>'
+    +'<div style="font-size:10px;color:var(--txt3);margin-top:2px;font-style:italic">'+quatre.shaar.fr+'</div>'
+    +(pShaar?'<div style="margin-top:.5rem;padding:.5rem .625rem;background:#fff;border-left:2px solid var(--teal);border-radius:0 5px 5px 0"><div style="font-size:9px;color:var(--txt3);margin-bottom:2px">📜 '+pShaar.ref+'</div><div style="font-size:10px;direction:rtl;color:var(--txt2);line-height:1.5;margin-bottom:2px">'+pShaar.heb+'</div><div style="font-size:9px;color:var(--teal);font-style:italic">✦ '+pShaar.resonance+'</div></div>':'')
+    +'</div>'
+    +'</div>'
+    // GRAINE DU LIEU
+    +'<div style="background:linear-gradient(135deg,#F0E8FA,#EAF2FC);border:1px solid #C8B8E8;border-radius:8px;padding:.75rem 1rem;margin-bottom:.875rem">'
+    +'<div style="font-size:9px;font-weight:600;color:#6B3FA0;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.375rem">Graine du Lieu™ · Zera haMakom™ · Cellule 10 m</div>'
+    +'<div style="font-size:22px;font-weight:500;color:#6B3FA0;direction:rtl;margin-bottom:4px">'+graine.heb+'</div>'
+    +'<div style="font-size:14px;font-weight:600;color:var(--txt);margin-bottom:2px">'+graine.lat+'</div>'
+    +'<div style="font-size:11px;color:var(--txt2)">'+graine.fr+'</div>'
+    +'<div style="display:flex;gap:.5rem;margin-top:.5rem">'
+    +'<span style="background:rgba(107,63,160,.1);color:#6B3FA0;font-size:10px;padding:2px 8px;border-radius:12px">4e déc.Lat='+graine.dec4_lat+' → '+graine.lettreLat.let+'</span>'
+    +'<span style="background:rgba(107,63,160,.1);color:#6B3FA0;font-size:10px;padding:2px 8px;border-radius:12px">4e déc.Lon='+graine.dec4_lon+' → '+graine.lettreLon.let+'</span>'
+    +'</div>'
+    +'</div>'
+    +'<div class="ep-row">'
+    +'<span class="ep eq">ICL PCNT™ v3.1</span>'
+    +'<span class="ep ee">FL·315 · lecture droite→gauche</span>'
+    +'<span class="ep ee">FL-301™ · Passoukim</span>'
+    +'</div>'
+    +'</div>');
+
+  shemHistory.unshift({
+    heb:quatre.idHebShort||quatre.idHeb,lat:quatre.idLat,iclFull:quatre.idLat,iclHeb:quatre.idHeb,
+    mouv:quatre.makom.lat+' · '+quatre.shaar.lat+' · '+quatre.mishkan.lat+' · Graine: '+graine.lat,
+    sig:quatre.mishkan.sig,
+    makomFull:quatre.makom,shaarFull:quatre.shaar,mishkanFull:quatre.mishkan,
+    graineFull:graine,
+    shemFamille:icl.shemFamille,
+    pMishkan:pMishkan,pMakom:pMakom,pShaar:pShaar,
+    famille:famLatStr+'/'+famLonStr+(icl.famHazakah?' ✦':''),
+    seqStr:'Lat: val='+icl.valLat.toFixed(4)+' seq='+dblLatStr+' | Lon: val='+icl.valLon.toFixed(4)+' seq='+dblLonStr,
+    coords:lat.toFixed(7)+'° '+ns+' · '+Math.abs(lon).toFixed(7)+'° '+eo,
+    sigId,src:m==='gps'?'GPS':'Manuel',
+    time:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})
+  });
+  renderHistory();
+
+  pn('pfl','dn');prog(65);setState('NOMINATION_READY');setNB(3,'EXP™','done');
+
+  await delay(300);
+  pn('ptc','act');await delay(220);pn('ptc','dn');prog(78);
+  pn('papi','act');await delay(220);pn('papi','dn');prog(88);
+  pn('ppub','act');await delay(280);pn('ppub','dn');prog(100);
+  setState('PUBLISHED');
+
+  currentPayload={
+    version:'3.1',status:'PUBLISHED',protocol:'ICL-PCNT-v3.1',
+    coordinateLaw:{id:'ZTS-COORD-7D',decimals:7,status:'MANDATORY',rule:'PRESERVE_AND_COMPUTE_WITH_SEVEN_DECIMALS'},
+    padaRegistry:PADA_TERRITORIAL_REGISTRY,
+    cockpitArchitecture:COCKPIT_ARCHITECTURE,
+    codex:'Codex Shem haMakomot v3.1',
+    signatureId:sigId,
+    coordinates:{lat:parseFloat(lat.toFixed(7)),lon:parseFloat(lon.toFixed(7)),display:lat.toFixed(7)+'° '+ns+' · '+Math.abs(lon).toFixed(7)+'° '+eo},
+    grandeFamille:{lat:famLatStr,lon:famLonStr,lecture_lat:famLatRead,lecture_lon:famLonRead,hazakah:icl.famHazakah||null},
+    ponderation:{val_lat:icl.valLat,seq_lat:icl.seqLat,lecture_lat:dblLatRead,val_lon:icl.valLon,seq_lon:icl.seqLon,lecture_lon:dblLonRead},
+    decimales:{lat:icl.latDec,lon:icl.lonDec},
+    doubles:{lat:dblLatStr,lon:dblLonStr,lecture_lat:dblLatRead,lecture_lon:dblLonRead},
+    ayin:{present:hasAyin,position:ayinStr},
+    icl:{lettres:quatre.idLat,heb:quatre.idHeb,lat_seq:icl.seqLat,lon_seq:icl.seqLon,regime:regime},
+    shem_makom:{heb:quatre.makom.heb,lat:quatre.makom.lat,fr:quatre.makom.fr,sig:quatre.makom.sig},
+    shem_shaar:{heb:quatre.shaar.heb,lat:quatre.shaar.lat,fr:quatre.shaar.fr,sig:quatre.shaar.sig},
+    shem_mishkan:{heb:quatre.mishkan.heb,lat:quatre.mishkan.lat,fr:quatre.mishkan.fr,sig:quatre.mishkan.sig},
+    shem_graine:{heb:graine.heb,lat:graine.lat,fr:graine.fr,dec4_lat:graine.dec4_lat,dec4_lon:graine.dec4_lon,cellule_m:10},
+    gematria_mishkan:{poids:0,racine:0,racine_lettre:'',direction:'',mouvement:''},
+    source:m==='gps'?'GPS':'MANUAL',
+    checksum,statut_epistemique:'EXP™'
+  };
+  const _gm=computeGematria(quatre.mishkan.heb);
+  currentPayload.gematria_mishkan={poids:_gm.total,racine:_gm.racine,racine_lettre:_gm.racineLettre.let,direction:_gm.dirLetters.join('-'),mouvement:_gm.racineLettre.mv};
+  const historicalTestResult={
+    engine:'ICL PCNT™ v3.1',
+    status:'COMPUTED',
+    input:inputSnapshot,
+    coordinates:{lat:inputSnapshot.lat,lon:inputSnapshot.lon},
+    integerSequences:{lat:icl.latEntierSeq,lon:icl.lonEntierSeq},
+    decimals:{lat:icl.latDec,lon:icl.lonDec},
+    ponderation:{latValue:icl.valLat,lonValue:icl.valLon,latSequence:icl.seqLat,lonSequence:icl.seqLon,latReading:dblLatRead,lonReading:dblLonRead},
+    grandeFamille:{lat:famLatStr,lon:famLonStr,latReading:famLatRead,lonReading:famLonRead,hazakah:icl.famHazakah||null,name:icl.shemFamille},
+    icl:{letters:quatre.idLat,hebrew:quatre.idHeb,latSequence:icl.seqLat,lonSequence:icl.seqLon},
+    naming:{makom:quatre.makom,shaar:quatre.shaar,mishkan:quatre.mishkan},
+    zeraIdentity:{source:'FOURTH_RAW_GPS_DECIMAL',latIndex:icl.shemGraine.dec4_lat,lonIndex:icl.shemGraine.dec4_lon,letters:icl.shemGraine.lat,declaredCellM:10},
+    gematriaMishkan:currentPayload.gematria_mishkan,
+    signatureId:sigId,
+    checksum:checksum
+  };
+  const dualObservation=createDualObservation(inputSnapshot,historicalTestResult,newEngineResult);
+  currentPayload.experimentalComparison={
+    status:'EXPERIMENTAL',
+    rule:'ONE_FROZEN_INPUT_TO_BOTH_ENGINES',
+    testId:dualObservation.testId,
+    input:dualObservation.input,
+    sameInputAppliedToBothEngines:dualObservation.sameInputAppliedToBothEngines,
+    historical:historicalTestResult,
+    candidate:newEngineResult,
+    observation:{timestamp:dualObservation.timestamp,distance_from_previous_m:dualObservation.distanceFromPreviousM,accuracy_m:dualObservation.accuracy,measurement_qualified:dualObservation.measurementQualified,historical_changed:dualObservation.historicalChanged,new_changed:dualObservation.newChanged,classification:dualObservation.transition,zera_spatial:dualObservation.zeraSpatial,qedimah_p0:dualObservation.qedimah,territorial_anchor:dualObservation.territorialAnchor}
+  };
+  dualObservation.territorialContext=currentPayload;
+
+  const tcRows=Object.entries(currentPayload).map(function(entry){
+    const v=typeof entry[1]==='object'&&entry[1]!==null?JSON.stringify(entry[1]):String(entry[1]);
+    const cl=['signatureId'].includes(entry[0])?'accent':['shem_makom','shem_shaar','shem_mishkan','shem_graine'].includes(entry[0])?'teal':'';
+    return '<div class="tc-row"><span class="tc-key">'+entry[0]+'</span><span class="tc-val '+cl+'">'+v+'</span></div>';
+  }).join('');
+
+  document.getElementById('tc-content').innerHTML=
+    '<div class="tc-card"><div class="tc-head"><span class="tc-title">TerritorialContext™ · ICL PCNT™ v3.1 + ICL Constitution Engine™ v2.2</span>'
+    +'<span class="tc-ready"><div class="tc-dot"></div> READY · PUBLISHED</span></div>'
+    +'<div class="tc-body">'+tcRows+'</div></div>'
+    +'<div class="ready-box"><i class="ti ti-circle-check"></i>'
+    +'<div><div class="ready-title">Prêt pour publication via les API territoriales · Deux moteurs documentés</div>'
+    +'<div class="ready-sub">Consommateurs internes · Maps.pada.ci · OmeH.ai · haDibbur · GanH.ai</div></div></div>';
+  renderDualComparison(dualObservation,icl);
+
+  const payStr=JSON.stringify(currentPayload,null,2)
+    .replace(/"([^"]+)":/g,'<span class="pay-key">"$1"</span>:')
+    .replace(/: "[^"]*"/g,function(m){return '<span class="pay-str">'+m+'</span>';})
+    .replace(/: (\d[\d.]*)/g,': <span class="pay-num">$1</span>')
+    .replace(/: (true|false)/g,': <span class="pay-bool">$1</span>')
+    .replace(/: null/g,': <span class="pay-null">null</span>');
+  document.getElementById('payload-display').innerHTML=payStr;
+
+  document.getElementById('cs-maps-pada').className='cs cs-on';
+  document.getElementById('cs-maps-pada').innerHTML='<div class="cs-dot"></div> Contrat prêt';
+  setNB(4,'READY','done');setNB(5,'1 actif','done');
+  document.getElementById('tb-ready').style.display='inline-flex';
+
+  await delay(600);
+  goTo('territorial');
+  document.getElementById('btn-vg').disabled=false;
+  document.getElementById('btn-vm').disabled=false;
+  document.getElementById('btn-vm').className='btn btn-g';
+  document.getElementById('btn-vm').textContent='Valider · lancer le pipeline ↗';
+}
+
+function resetAll(){
+  const ilat=document.getElementById('ilat');const ilon=document.getElementById('ilon');
+  if(ilat)ilat.value='';if(ilon)ilon.value='';
+  gpsCoords=null;
+  const gdot=document.getElementById('gdot');if(gdot)gdot.className='gdot';
+  const gst=document.getElementById('gst');if(gst)gst.textContent='Position non acquise';
+  const gcoords=document.getElementById('gcoords');if(gcoords)gcoords.style.display='none';
+  const gerr=document.getElementById('gerr');if(gerr)gerr.style.display='none';
+  const bvg=document.getElementById('btn-vg');if(bvg)bvg.disabled=true;
+  const bvm=document.getElementById('btn-vm');if(bvm){bvm.disabled=true;bvm.className='btn btn-g';bvm.textContent='Valider · lancer le pipeline ↗';}
+  const bgps=document.getElementById('btn-gps');if(bgps){bgps.disabled=false;bgps.innerHTML='<i class="ti ti-current-location"></i> Acquérir ma position';}
+  [1,2,3,4,5].forEach(function(n){const el=document.getElementById('nb'+n);if(el){el.textContent='—';el.closest('.nav-item').classList.remove('done','err');}});
+  ['pste','pstr','pcts','pfl','ptc','papi','ppub'].forEach(function(id){pn(id,'');});
+  prog(0);setState('INITIALIZED');
+  document.getElementById('tb-ready').style.display='none';
+  currentPayload=null;
+  const rc=document.getElementById('ref-content');if(rc)rc.innerHTML='<div style="text-align:center;padding:2rem;color:var(--txt3)"><i class="ti ti-radar" style="font-size:28px;display:block;margin-bottom:.5rem"></i>En attente des coordonnées</div>';
+  const fc=document.getElementById('fl-content');if(fc)fc.innerHTML='<div style="text-align:center;padding:2rem;color:var(--txt3)"><i class="ti ti-writing" style="font-size:28px;display:block;margin-bottom:.5rem"></i>En attente du Référentiel Territorial™</div>';
+  const tc=document.getElementById('tc-content');if(tc)tc.innerHTML='<div style="text-align:center;padding:2rem;color:var(--txt3)"><i class="ti ti-world" style="font-size:28px;display:block;margin-bottom:.5rem"></i>En attente de FL-301™</div>';
+  const pd=document.getElementById('payload-display');if(pd)pd.textContent='En attente du TerritorialContext™...';
+  const csg=document.getElementById('cs-maps-pada');if(csg){csg.className='cs cs-wait';csg.innerHTML='<div class="cs-dot"></div> En attente';}
+  goTo('localisation');
+}
+
+function renderHistory(){
+  const wrap=document.getElementById('history-wrap');
+  const cnt=document.getElementById('hist-count');
+  if(!wrap)return;
+  if(cnt)cnt.textContent=shemHistory.length===0?'0 Shem généré':shemHistory.length===1?'1 Shem généré':shemHistory.length+' Shemot générés';
+  if(shemHistory.length===0){
+    wrap.innerHTML='<div style="text-align:center;padding:1.5rem;color:var(--txt3);font-size:12px">Aucun Shem généré dans cette session</div>';
+    return;
+  }
+  wrap.innerHTML=shemHistory.map(function(s,i){
+    return '<div class="hist-item" onclick="openModal('+i+')">'
+      +'<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2px">'
+      +'<div class="hist-heb" style="color:var(--vert)">'+s.mishkanFull.heb+'</div>'
+      +'<div style="font-size:10px;color:var(--txt3);font-family:var(--mono);padding-top:4px">'+s.time+'</div>'
+      +'</div>'
+      +'<div class="hist-lat" style="font-weight:700">'+s.mishkanFull.lat+'</div>'
+      +'<div style="font-size:11px;color:var(--txt3);margin-bottom:3px;font-style:italic">'+s.mishkanFull.fr+'</div>'
+      +'<div class="hist-meta">'+s.sigId+' · '+s.coords+' · '+s.src+'</div>'
+      +'<div style="font-size:11px;color:var(--txt2);margin-top:3px">'
+      +'<span style="color:var(--or-mid);font-weight:500">'+s.makomFull.lat+'</span>'
+      +' · <span style="color:var(--teal)">'+s.shaarFull.lat+'</span>'
+      +'</div>'
+      +'<div style="font-size:10px;color:var(--txt3);margin-top:3px;font-family:var(--mono)">'+s.seqStr+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+// ── GUÉMATRIE HÉBRAÏQUE · Table canonique ──────────────────────────────────────
+const GEM_TABLE={
+  'א':1,'ב':2,'ג':3,'ד':4,'ה':5,'ו':6,'ז':7,'ח':8,'ט':9,
+  'י':10,'כ':20,'ל':30,'מ':40,'נ':50,'ס':60,'ע':70,'פ':80,'צ':90,
+  'ק':100,'ר':200,'ש':300,'ת':400,
+  // formes finales
+  'ך':20,'ם':40,'ן':50,'ף':80,'ץ':90,
+  // avec niqqud identiques
+  'שׁ':300,'שׂ':300
+};
+
+function gemLetter(ch){
+  return GEM_TABLE[ch]||0;
+}
+
+function computeGematria(hebStr){
+  // Nettoie les niqqud (points-voyelles) sauf les lettres
+  const clean=hebStr.replace(/[\u0591-\u05C7]/g,'').replace(/\s+/g,' ').trim();
+  const letters=[...clean].filter(c=>c.trim()&&c!=='·'&&c!=='-');
+  
+  let total=0;
+  const detail=[];
+  for(const ch of letters){
+    const v=gemLetter(ch);
+    if(v>0){detail.push({ch,v});total+=v;}
+  }
+  
+  // Réduction jusqu'à un chiffre (racine)
+  let r=total;
+  const steps=[total];
+  while(r>9){
+    r=[...String(r)].reduce((a,b)=>a+parseInt(b),0);
+    steps.push(r);
+  }
+  const racineLettre=LM[r]||LM[5];
+  
+  // Direction · Qri'at haTnuah · chiffres du total
+  const dirSeq=[...String(total)].map(Number);
+  const dirLetters=dirSeq.map(n=>LM[n].let);
+  const dirHeb=dirSeq.map(n=>LM[n].heb);
+  
+  return{total,detail,reduction:steps,racine:r,racineLettre,dirSeq,dirLetters,dirHeb};
+}
+
+function openModal(i){
+  const s=shemHistory[i];if(!s)return;
+  // Mishkan = titre principal
+  document.getElementById('hm-heb').textContent=s.heb||s.mishkanFull.heb;
+  document.getElementById('hm-lat').textContent=s.lat||s.mishkanFull.lat;
+  const frEl=document.getElementById('hm-fr');if(frEl)frEl.textContent=s.mishkanFull.fr;
+  const subEl=document.getElementById('hm-makom-sub');
+  if(subEl)subEl.innerHTML='<span style="color:var(--or-mid)">'+s.makomFull.lat+'</span> · <span style="color:var(--teal)">'+s.shaarFull.lat+'</span>';
+  // Shem de Famille
+  const sf=s.shemFamille;
+  if(sf){
+    document.getElementById('hm-famille').innerHTML=
+      '<span style="font-size:14px;font-weight:600;direction:rtl;display:block;margin-bottom:2px;color:var(--txt3)">'+sf.heb+'</span>'
+      +'<span style="font-size:12px;font-weight:600;color:var(--txt2)">'+sf.lat+'</span>'
+      +' <span style="font-size:11px;color:var(--txt3)">· '+sf.fr+'</span>'
+      +'<div style="font-size:10px;color:var(--txt3);margin-top:3px;font-style:italic">'+sf.sig+'</div>';
+  }
+  document.getElementById('hm-mouv').innerHTML=
+    '<strong style="color:var(--or-mid)">Makom</strong> · '+s.makomFull.fr+'<br>'
+    +'<strong style="color:var(--teal)">Sha\'ar</strong> · '+s.shaarFull.fr+'<br>'
+    +'<strong style="color:var(--vert)">Mishkan</strong> · '+s.mishkanFull.fr;
+  document.getElementById('hm-sig').textContent=s.makomFull.sig||s.sig;
+  document.getElementById('hm-portee').textContent=
+    'Sha\'ar : '+s.shaarFull.sig+'\nMishkan : '+s.mishkanFull.sig;
+
+  // Passoukim de résonance dans le modal
+  const passEl=document.getElementById('hm-passoukim');
+  if(passEl){
+    let passHtml='';
+    if(s.pMishkan)passHtml+='<div style="margin-bottom:.5rem"><div style="font-size:9px;font-weight:600;color:var(--vert);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.375rem">Mishkan · '+s.pMishkan.ref+' · '+s.pMishkan.sefer+'</div>'+renderPassouk(s.pMishkan,'var(--vert)')+'</div>';
+    if(s.pMakom)passHtml+='<div style="margin-bottom:.5rem"><div style="font-size:9px;font-weight:600;color:var(--or-mid);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.375rem">Makom · '+s.pMakom.ref+' · '+s.pMakom.sefer+'</div>'+renderPassouk(s.pMakom,'var(--or-mid)')+'</div>';
+    if(s.pShaar)passHtml+='<div><div style="font-size:9px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.375rem">Sha\'ar · '+s.pShaar.ref+' · '+s.pShaar.sefer+'</div>'+renderPassouk(s.pShaar,'var(--teal)')+'</div>';
+    if(!passHtml)passHtml='<div style="font-size:11px;color:var(--txt3);font-style:italic">Aucun Passouk de résonance inscrit pour ces Shemot.</div>';
+    passEl.innerHTML=passHtml;
+  }
+  const gem=computeGematria(s.mishkanFull.heb);
+  // Grille lettre par lettre
+  const grid=document.getElementById('hm-gematria-grid');
+  if(grid){
+    grid.innerHTML=gem.detail.map(function(d){
+      return '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:.375rem .5rem;text-align:center">'
+        +'<div style="font-size:16px;direction:rtl;color:rgba(255,255,255,.8)">'+d.ch+'</div>'
+        +'<div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.5);font-family:var(--mono)">'+d.v+'</div>'
+        +'</div>';
+    }).join('');
+  }
+  const reductionStr=gem.reduction.join(' → ');
+  const el_p=document.getElementById('hm-gem-poids');if(el_p)el_p.textContent=gem.total;
+  const el_r=document.getElementById('hm-gem-racine');if(el_r)el_r.textContent=gem.racine+' · '+gem.racineLettre.let;
+  const el_d=document.getElementById('hm-gem-dir');if(el_d)el_d.textContent=gem.dirLetters.join(' · ')+' ('+gem.dirHeb.join('·')+')';
+  const el_m=document.getElementById('hm-gem-mouv');if(el_m)el_m.textContent=gem.racineLettre.mv;
+  const el_det=document.getElementById('hm-gem-detail');if(el_det)el_det.textContent='Réduction : '+reductionStr+' → '+gem.racineLettre.let+' · Valeur Gan Haï : '+gem.total;
+
+  document.getElementById('hm-meta').textContent=s.sigId+' · '+s.coords+' · '+s.src+' · '+s.time+(s.seqStr?' · '+s.seqStr:'');
+  document.getElementById('hist-modal-overlay').classList.add('vis');
+}
+
+function closeModal(e){
+  if(e.target===document.getElementById('hist-modal-overlay'))
+    document.getElementById('hist-modal-overlay').classList.remove('vis');
+}
+
+function closeModalDirect(){
+  document.getElementById('hist-modal-overlay').classList.remove('vis');
+}
+
+function copyPayload(){
+  if(!currentPayload){alert('Aucun payload disponible.');return;}
+  navigator.clipboard.writeText(JSON.stringify(currentPayload,null,2))
+    .then(function(){alert('Payload copié.');})
+    .catch(function(){prompt('Copier le payload :',JSON.stringify(currentPayload));});
+}
+
+function dlPayload(){
+  if(!currentPayload){alert('Aucun payload disponible.');return;}
+  const a=document.createElement('a');
+  a.href='data:application/json,'+encodeURIComponent(JSON.stringify(currentPayload,null,2));
+  a.download='TerritorialContext-'+(currentPayload.signatureId||'export')+'-v3.json';
+  a.click();
+}
+</script>
+<script src="icl-constitution-engine-v2.2.js"></script>
+
+<!-- HIST MODAL -->
+<div class="hist-modal-overlay" id="hist-modal-overlay" onclick="closeModal(event)">
+  <div class="hist-modal">
+    <div class="hm-head">
+      <div>
+        <div class="hm-title-heb" id="hm-heb" style="color:var(--vert)"></div>
+        <div class="hm-title-lat" id="hm-lat"></div>
+        <div style="font-size:12px;color:var(--txt3);font-style:italic;margin-top:2px" id="hm-fr"></div>
+        <div style="font-size:11px;color:var(--txt3);margin-top:4px" id="hm-makom-sub"></div>
+      </div>
+      <button class="hm-close" onclick="closeModalDirect()">✕</button>
+    </div>
+    <div class="hm-body">
+      <div class="hm-lot">
+        <div class="hm-lot-lbl"><span class="hm-lot-n" style="background:var(--bord2);color:var(--txt2)">F</span> Grande Famille · Shem de Famille</div>
+        <div class="hm-lot-val" id="hm-famille" style="background:var(--surf2);color:var(--txt2)"></div>
+      </div>
+      <div class="hm-lot">
+        <div class="hm-lot-lbl"><span class="hm-lot-n">1</span> Trois Shem · Structure · Fonction · Finalité</div>
+        <div class="hm-lot-val" id="hm-mouv" style="white-space:pre-line"></div>
+      </div>
+      <div class="hm-lot">
+        <div class="hm-lot-lbl"><span class="hm-lot-n">2</span> Makom · Ce que le lieu est</div>
+        <div class="hm-lot-val dark" id="hm-sig"></div>
+      </div>
+      <div class="hm-lot">
+        <div class="hm-lot-lbl"><span class="hm-lot-n">3</span> Sha'ar · Mishkan · Fonction et finalité</div>
+        <div class="hm-lot-val grey" id="hm-portee" style="white-space:pre-line"></div>
+      </div>
+      <div class="hm-lot" id="hm-lot-passoukim">
+        <div class="hm-lot-lbl"><span class="hm-lot-n" style="background:var(--bleu);color:#fff">📜</span> Passoukim de résonance</div>
+        <div id="hm-passoukim"></div>
+      </div>
+      <!-- GUÉMATRIE DU MISHKAN · Valeur pour Gan Haï -->
+      <div class="hm-lot">
+        <div class="hm-lot-lbl"><span class="hm-lot-n" style="background:var(--bleu);color:#fff">ג</span> Guématrie du Shem Mishkan · Valeur Gan Haï™</div>
+        <div id="hm-gematria" style="background:var(--nuit);border-radius:8px;padding:.875rem 1rem">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:.75rem" id="hm-gematria-grid"></div>
+          <div style="display:flex;gap:.75rem;align-items:baseline;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,.08);padding-top:.625rem">
+            <div>
+              <div style="font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:2px">Poids · Valeur totale</div>
+              <div style="font-size:22px;font-weight:700;color:#fff;font-family:var(--mono)" id="hm-gem-poids"></div>
+            </div>
+            <div>
+              <div style="font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:2px">Racine · Réduction</div>
+              <div style="font-size:22px;font-weight:700;color:var(--or);font-family:var(--mono)" id="hm-gem-racine"></div>
+            </div>
+            <div>
+              <div style="font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:2px">Direction · Qri'at haTnuah</div>
+              <div style="font-size:16px;font-weight:600;color:#6EB8D4;font-family:var(--mono)" id="hm-gem-dir"></div>
+            </div>
+            <div style="flex:1;min-width:140px">
+              <div style="font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:2px">Mouvement · Lettre-racine</div>
+              <div style="font-size:11px;color:rgba(255,255,255,.5);font-style:italic" id="hm-gem-mouv"></div>
+            </div>
+          </div>
+          <div style="margin-top:.625rem;padding-top:.625rem;border-top:1px solid rgba(255,255,255,.08);font-size:10px;color:rgba(255,255,255,.25);font-family:var(--mono)" id="hm-gem-detail"></div>
+        </div>
+      </div>
+    </div>
+    <div class="hm-footer">
+      <div class="hm-meta" id="hm-meta"></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
