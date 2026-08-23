@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0A0A14">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Cockpit Spatial™ v4.0 — Makom Intelligence</title>
+<title>Cockpit Spatial™ v4.1 — Acquisition gouvernée</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.31.0/webfont/tabler-icons.min.css">
 <style>
 :root{
@@ -272,7 +272,7 @@ html,body{height:100%;background:var(--surf);color:var(--txt);font-family:system
 <!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-top">
-    <div class="sidebar-logo">Cockpit Spatial™ v4.0</div>
+    <div class="sidebar-logo">Cockpit Spatial™ v4.1</div>
     <div class="sidebar-sub">Makom Intelligence · <span class="v2-badge">LABORATOIRE</span></div>
     <span class="sidebar-heb">שֵׁם הַמָּקוֹם</span>
   </div>
@@ -340,6 +340,14 @@ html,body{height:100%;background:var(--surf);color:var(--txt);font-family:system
         </div><span class="fh">La destination est comparée à la prise GPS unique en parallèle du résolveur territorial historique.</span></div>
       </div>
 
+      <div class="card" style="margin-bottom:.875rem;border-color:#b98222;background:#fff9ec">
+        <div class="card-head"><span class="card-title">Témoin terrain calibré · facultatif</span><span class="badge" style="background:#f5e5c3;color:#7a4b08;font-size:10px">TEST UNIQUEMENT</span></div>
+        <div class="card-body"><div class="grid-2">
+          <div class="fg"><label for="ifieldzera">Nombre réel de Zera parcourues</label><input id="ifieldzera" inputmode="numeric" min="0" step="1" placeholder="ex. 2"></div>
+          <div class="fg"><label for="ifielddirection">Sens observé depuis la Zera précédente</label><select id="ifielddirection"><option value="">Non déclaré</option><option value="FORWARD">Vers l’avant de la rue</option><option value="BACKWARD">Vers l’arrière de la rue</option></select></div>
+        </div><span class="fh">Ce témoin sert à calibrer les essais connus. Il n’est jamais rempli automatiquement par le GPS et reste exporté avec sa provenance.</span></div>
+      </div>
+
       <div class="mode-toggle">
         <button class="btn btn-g" id="btn-mode-gps" onclick="switchMode('gps')">
           <i class="ti ti-current-location"></i> Position GPS en direct
@@ -355,6 +363,10 @@ html,body{height:100%;background:var(--surf);color:var(--txt);font-family:system
           <div class="gps-row">
             <div class="gdot" id="gdot"></div>
             <span class="gps-lbl" id="gst">Position non acquise</span>
+          </div>
+          <div id="gacq" style="display:none;margin:.55rem 0;padding:.6rem .75rem;border:1px solid var(--bord);border-radius:8px;background:var(--surf2);font-size:11px;line-height:1.55">
+            <strong id="gacq-title">GPS non reçu</strong>
+            <div id="gacq-detail" style="color:var(--txt2)">Prises nouvelles : 0/4</div>
           </div>
           <div class="cg" id="gcoords" style="display:none">
             <div class="cc"><div class="cl">Latitude</div><div class="cv" id="glat">—</div></div>
@@ -414,6 +426,10 @@ html,body{height:100%;background:var(--surf);color:var(--txt);font-family:system
     <div class="panel" id="panel-referentiel">
       <div class="sec-title">Référentiel Territorial™</div>
       <div class="sec-sub">Résultat déterministe · STE™ + STR™ + CTS™ · Codex v3.1</div>
+
+      <div id="tano-territory-summary" class="card" style="margin-bottom:1rem;border:2px solid #b98222;background:#fff9ec">
+        <div class="card-body" style="font-size:12px">Chargement du territoire canonique Rue Tano Atchimon…</div>
+      </div>
 
       <div class="pipe-wrap">
         <div class="pipe-lbl"><i class="ti ti-route" style="font-size:12px"></i> Pipeline STE™</div>
@@ -519,7 +535,7 @@ html,body{height:100%;background:var(--surf);color:var(--txt);font-family:system
 
       <div class="card">
         <div class="card-head">
-          <span class="card-title">Cockpit Spatial™ v4.0 · Territorial API Hub</span>
+          <span class="card-title">Cockpit Spatial™ v4.1 · Territorial API Hub</span>
           <span class="badge" style="background:var(--surf2);color:var(--txt3);font-size:10px">LAB → API</span>
         </div>
         <div class="card-body">
@@ -557,10 +573,38 @@ html,body{height:100%;background:var(--surf);color:var(--txt);font-family:system
 <script src="zera-fixed-coordinate-registry-v0.1.js"></script>
 <script src="zera-address-domain-overrides-v0.1.js"></script>
 <script src="zera-address-domain-registry-v0.1.js"></script>
+<script src="tano-atchimon-territory-v001.js"></script>
 <script src="territorial-anchor-resolver-v0.3.js"></script>
+<script src="gps-acquisition-governance-v0.1.js"></script>
+<script src="zera-continuity-governance-v0.1.js"></script>
+<script src="zera-hsc-sequence-registry-v1.0.js"></script>
+<script src="zera-earthbound-continuity-governance-v0.2.js"></script>
+<script src="zera-governed-path-resolver-v0.1.js"></script>
+<script src="zera-validated-prefix-resolver-v0.1.js"></script>
+<script src="zera-territorial-state-contracts-v0.1.js"></script>
+<script src="zera-territorial-state-estimator-v0.1.js"></script>
 <script src="omeh-destination-proximity-resolver-v0.1.js"></script>
+<script src="omeh-presence-street-resolver-v0.1.js"></script>
 <script src="qedimah-territorial-potential-v0.1.js"></script>
 <script>
+function renderTanoTerritorySummary(){
+  const target=document.getElementById('tano-territory-summary');
+  if(!target)return;
+  const api=window.TanoAtchimonTerritoryV001,summary=api&&api.summary();
+  if(!summary||summary.status!=='TERRITORY_READY'){
+    target.innerHTML='<div class="card-body"><strong>Territoire Rue Tano Atchimon indisponible</strong><div style="margin-top:6px">'+escapeReadable(summary&&summary.status||'LIBRARY_UNAVAILABLE')+'</div></div>';
+    return;
+  }
+  const domain99=api.getDomain(99);
+  target.innerHTML='<div class="card-head"><span class="card-title">Territoire canonique de test · Rue Tano Atchimon</span><span class="cs cs-on"><span class="cs-dot"></span>TERRITORY READY</span></div>'
+    +'<div class="card-body"><div style="font:700 18px var(--mono);color:#7a4b08">'+escapeReadable(summary.territoryId)+' · '+escapeReadable(summary.territoryVersion)+'</div>'
+    +'<div style="margin-top:8px"><strong>Grille constituée :</strong> '+summary.zeraCount+' Zera · '+summary.street.lengthM.toFixed(2)+' m · 1 Zera = 0,36 m</div>'
+    +'<div style="margin-top:5px"><strong>Étendue :</strong> '+escapeReadable(summary.firstZeraId)+' → '+escapeReadable(summary.lastZeraId)+'</div>'
+    +'<div style="margin-top:5px"><strong>PADA :</strong> '+summary.addressCount+' domaines officiels liés à la voie R'+summary.street.roadId+'</div>'
+    +(domain99?'<div style="margin-top:5px"><strong>Domaine 99 :</strong> PADA '+domain99.padaAddressId+' · Z'+domain99.zeraReservation.startIndex+' → Z'+domain99.zeraReservation.endIndex+' · ancre Z'+domain99.zeraReservation.anchorIndex+' · allocation provisoire</div>':'')
+    +'<div style="margin-top:8px;color:#746f67"><strong>Provenance :</strong> géométrie et adresses PADA · coordonnées calculées, non validées par levé topographique · ICL par Zera en attente de constitution par les deux moteurs.</div></div>';
+}
+document.addEventListener('DOMContentLoaded',renderTanoTerritorySummary);
 // ── TABLE CANONIQUE · Codex Shem haMakomot v3.1 ──────────────────────────────
 const LM=[
   {n:0,let:'Ayin',heb:'ע',mv:'Vision intérieure · voit ce qui est invisible · qualifie depuis sa position'},
@@ -973,6 +1017,9 @@ let shemHistory=[];
 let dualEngineHistory=[];
 let dualEngineNotes={};
 let gpsAcquisitionSamples=[];
+let gpsAcquisitionStartedAt=null;
+let gpsAcquisitionDecision=null;
+let gpsRefinementWatch=null;
 const ZERA_METERS=0.36;
 // CAL-ZERA-001 · Première métrique issue du test terrain du 22 août 2026 :
 // 7 Zera terrain / 10.7029627916 Zera GPS nets = 0.6540242762.
@@ -1002,7 +1049,7 @@ const PADA_TERRITORIAL_REGISTRY=Object.freeze({
   markerRule:'ONE_MAP_MARKER_PER_PADA_ADDRESS_POINT'
 });
 const COCKPIT_ARCHITECTURE=Object.freeze({
-  officialName:'Cockpit Spatial™ v4.0 - Makom Intelligence',
+  officialName:'Cockpit Spatial™ v4.1 - Makom Intelligence',
   role:'TERRITORIAL_LAB_AND_API_PROVIDER',
   consumers:[
     {id:'maps.pada.ci',name:'Maps.pada.ci',function:'Carte territoriale avec agent conversationnel pour orienter les résidents depuis leur contexte, leur position GPS, leur destination ou leur recherche'},
@@ -1040,6 +1087,7 @@ function createDualObservation(inputSnapshot,historicalResult,newResult){
   const accuracy=inputSnapshot.accuracyM;
   const territorialAnchor=window.TerritorialAnchorResolver?window.TerritorialAnchorResolver.resolve({lat:point.lat,lon:point.lon,accuracyM:accuracy,acquisitionSamples:inputSnapshot.acquisitionSamples,previous:previous,calibrationFactor:ZERA_CALIBRATION_FACTOR}):{engine:'Territorial Anchor Resolver™',version:'0.3.0',status:'LIBRARY_UNAVAILABLE'};
   const destinationProximity=window.OmeHDestinationProximityResolver?window.OmeHDestinationProximityResolver.resolve({lat:point.lat,lon:point.lon,accuracyM:accuracy,destination:inputSnapshot.destination}):{engine:'OmeH Destination Proximity Resolver™',version:'0.1.0',status:'LIBRARY_UNAVAILABLE'};
+  const omehPresence=window.OmeHPresenceStreetResolver?window.OmeHPresenceStreetResolver.resolve({lat:point.lat,lon:point.lon,accuracyM:accuracy}):{engine:'OmeH Presence Street Resolver™',version:'0.1.0',status:'LIBRARY_UNAVAILABLE'};
   const matchSamples=inputSnapshot.acquisitionSamples&&inputSnapshot.acquisitionSamples.length?inputSnapshot.acquisitionSamples:[{lat:point.lat,lon:point.lon,accuracyM:accuracy}];
   if(window.ZeraFixedCoordinateRegistry&&territorialAnchor.zeraCell&&territorialAnchor.zeraCell.cellId){
     const fixedCell=window.ZeraFixedCoordinateRegistry.getCell({roadId:territorialAnchor.road.id,partIndex:territorialAnchor.road.partIndex,index:territorialAnchor.zeraCell.indexFromCanonicalPartStart,withAnchors:true});
@@ -1051,6 +1099,32 @@ function createDualObservation(inputSnapshot,historicalResult,newResult){
     territorialAnchor.addressDomain=window.ZeraAddressDomainRegistry.getDomainByAddressId({addressId:territorialAnchor.selectedAddress.id});
   }
   const qedimah=window.QedimahTerritorialPotential?window.QedimahTerritorialPotential.evolve({anchor:territorialAnchor,samples:matchSamples,previousQedimah:previous&&previous.qedimah||null}):{engine:'Qedimah Territorial Potential™ 159',version:'0.1.0',status:'LIBRARY_UNAVAILABLE'};
+  const pointIndex=dualEngineHistory.length+1;
+  const testId='ICL-TEST-'+String(pointIndex).padStart(4,'0');
+  const continuityGovernance=window.ZeraContinuityGovernance?window.ZeraContinuityGovernance.resolve({currentAnchor:territorialAnchor,previousObservation:previous,currentObservation:{pointIndex:pointIndex},currentOmeh:omehPresence,currentQedimah:qedimah,samples:matchSamples,acquisitionGovernance:inputSnapshot.acquisitionGovernance,source:inputSnapshot.source}):{status:'LIBRARY_UNAVAILABLE'};
+  const pathGovernance=window.ZeraGovernedPathResolver?window.ZeraGovernedPathResolver.resolve({currentAnchor:territorialAnchor,previousObservation:previous,currentOmeh:omehPresence,currentQedimah:qedimah,samples:matchSamples,acquisitionGovernance:inputSnapshot.acquisitionGovernance,calibratedFieldWitness:inputSnapshot.calibratedFieldWitness,source:inputSnapshot.source}):{status:'LIBRARY_UNAVAILABLE'};
+  const validatedPrefix=window.ZeraValidatedPrefixResolver?window.ZeraValidatedPrefixResolver.resolve({pathGovernance:pathGovernance,calibratedFieldWitness:inputSnapshot.calibratedFieldWitness,transitionWitnesses:inputSnapshot.transitionWitnesses||[]}):{status:'VALIDATED_PREFIX_LIBRARY_UNAVAILABLE'};
+  if(validatedPrefix.status==='COMPLETE_PATH_VALIDATED'||validatedPrefix.status==='PREFIX_PARTIALLY_VALIDATED'){
+    continuityGovernance.status=validatedPrefix.status==='COMPLETE_PATH_VALIDATED'?'MULTI_CELL_PATH_MANIFESTED':'VALIDATED_PREFIX_MANIFESTED';
+    continuityGovernance.decision=validatedPrefix.decision;
+    continuityGovernance.retainedCellId=validatedPrefix.governedZeraId;
+    continuityGovernance.governedMovement=validatedPrefix.governedMovement;
+    continuityGovernance.proof={authorized:true,reason:'ZERA_VALIDATED_PREFIX_RESOLVER_CONSECUTIVE_TRANSITIONS_PROVEN'};
+  }
+  const territorialStateEstimation=window.ZeraTerritorialStateEstimator?window.ZeraTerritorialStateEstimator.estimate({
+    testId:testId,
+    pointIndex:pointIndex,
+    timestamp:new Date().toISOString(),
+    input:inputSnapshot,
+    point:point,
+    source:inputSnapshot.source,
+    accuracy:accuracy,
+    territorialAnchor:territorialAnchor,
+    zeraContinuityGovernance:continuityGovernance,
+    zeraPathGovernance:pathGovernance,
+    previousObservation:previous
+  }):{status:'STATE_ESTIMATOR_LIBRARY_UNAVAILABLE'};
+  const territorialStateContracts=territorialStateEstimation.contractChain||(window.ZeraTerritorialStateContracts?window.ZeraTerritorialStateContracts.compose({testId:testId,pointIndex:pointIndex,timestamp:new Date().toISOString(),input:inputSnapshot,point:point,source:inputSnapshot.source,accuracy:accuracy,territorialAnchor:territorialAnchor,zeraContinuityGovernance:continuityGovernance,zeraPathGovernance:pathGovernance}):{status:'CONTRACT_LIBRARY_UNAVAILABLE'});
   const qualified=distance!==null;
   const accuracyAdvisory=accuracy!==null&&accuracy>GPS_ZERA_MAX_ACCURACY_M?'GOOGLE_UNCERTAINTY_HIGH':'GOOGLE_UNCERTAINTY_ACCEPTABLE';
   let transition='BASELINE';
@@ -1074,7 +1148,8 @@ function createDualObservation(inputSnapshot,historicalResult,newResult){
     newResult.source.lon===inputSnapshot.lon
   );
   const observation={
-    testId:'ICL-TEST-'+String(dualEngineHistory.length+1).padStart(4,'0'),
+    testId:testId,
+    pointIndex:pointIndex,
     timestamp:new Date().toISOString(),
     input:inputSnapshot,
     point,
@@ -1087,8 +1162,14 @@ function createDualObservation(inputSnapshot,historicalResult,newResult){
     calibratedDistanceFromPreviousM:calibratedDistanceM,
     calibratedDistanceFromPreviousZera:calibratedDistanceZera,
     territorialAnchor:territorialAnchor,
+    omehPresence:omehPresence,
     destinationProximity:destinationProximity,
     qedimah:qedimah,
+    zeraContinuityGovernance:continuityGovernance,
+    zeraPathGovernance:pathGovernance,
+    zeraValidatedPrefix:validatedPrefix,
+    territorialStateEstimation:territorialStateEstimation,
+    territorialStateContracts:territorialStateContracts,
     historicalIcl,newIcl,historicalChanged,newChanged,transition,
     zeraSpatial:{
       status:transition,
@@ -1173,6 +1254,92 @@ function renderTerritorialAnchorCard(anchor){
     +'<div style="font-size:12px;margin-top:6px"><strong>Objets territoriaux :</strong> '+escapeReadable(zera.territorialObjects&&zera.territorialObjects.count||0)+' ressource(s) · capacité multiple</div></div>';
 }
 
+function renderOmehPresenceCard(result,anchor){
+  if(!result)return '';
+  if(result.status!=='STREET_PRESENCE_OBSERVED')return '<div class="card" style="margin-top:12px;padding:14px;border:1px dashed var(--bord);border-radius:9px"><strong>OmeH Presence Street Resolver™ v0.1</strong><div style="font-size:11px;color:var(--txt2);margin-top:6px">'+escapeReadable(result.status||'Résultat indisponible')+'</div></div>';
+  const street=result.observedStreet||{},address=result.nearestPadaAddress||{},cockpitRoad=anchor&&anchor.road?anchor.road.street:null,agreement=Boolean(cockpitRoad&&street.street&&cockpitRoad===street.street);
+  return '<div class="card" style="margin-top:12px;padding:14px;border:2px solid #d39a2c;border-radius:9px;background:#fff8e8">'
+    +'<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><strong style="color:#8a5600">OmeH Presence Street Resolver™ v0.1</strong><span style="font:11px var(--mono);color:#8a5600">'+(agreement?'ACCORD_RUE':'DIVERGENCE_RUE')+'</span></div>'
+    +'<div style="font-size:10px;color:var(--txt3);margin-top:3px">Lecteur indépendant · une activation GPS · aucune destination requise · ne modifie ni P0 ni la Zera</div>'
+    +'<div style="font-size:12px;margin-top:9px"><strong>Rue observée par OmeH.ai :</strong> '+escapeReadable(street.street)+' · '+Number(street.distanceToRoadM).toFixed(2)+' m de la géométrie de voie</div>'
+    +'<div style="font-size:12px;margin-top:6px"><strong>Adresse PADA la plus proche :</strong> '+escapeReadable(address.number+' '+address.street)+' · '+Number(address.distanceM).toFixed(2)+' m du GPS</div>'
+    +'<div style="font-size:12px;margin-top:6px"><strong>Position dans les adresses indexées :</strong> '+escapeReadable(address.rankOnStreet&&address.rankOnStreet.index)+' / '+escapeReadable(address.rankOnStreet&&address.rankOnStreet.total)+'</div>'
+    +'<div style="font-size:12px;margin-top:6px"><strong>Comparaison :</strong> Cockpit = '+escapeReadable(cockpitRoad||'non résolue')+' · OmeH.ai = '+escapeReadable(street.street)+' · '+(agreement?'même rue':'rues différentes')+'</div>'
+    +'<div style="font-size:11px;color:var(--txt2);margin-top:7px"><strong>Gouvernance :</strong> cette lecture situe une rue probable depuis un GPS unique. Elle ne constitue pas une preuve de présence dans une Zera.</div></div>';
+}
+
+function renderGovernedMovement(observation){
+  const governance=observation&&observation.zeraContinuityGovernance||{};
+  if(governance.fromPoint==null){
+    return '<div class="card" style="margin-top:12px;padding:14px;border:2px solid #263c66;border-radius:9px;background:#f3f6fc"><strong>Déplacement des points</strong><div style="font-size:18px;font-weight:700;margin-top:7px">P1 · point d’origine gouverné</div><div style="font-size:11px;color:var(--txt2);margin-top:5px">Aucune distance antérieure à afficher.</div></div>';
+  }
+  const movement=governance.governedMovement||{},candidate=governance.rawTerritorialCandidate||{};
+  const rawM=observation.distanceFromPreviousM,rawZ=observation.distanceFromPreviousZera;
+  return '<div class="card" style="margin-top:12px;padding:14px;border:2px solid #263c66;border-radius:9px;background:#f3f6fc">'
+    +'<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><strong>Déplacement P'+escapeReadable(governance.fromPoint)+' → P'+escapeReadable(governance.toPoint)+'</strong><span style="font:11px var(--mono);color:#394f80">'+escapeReadable(governance.status)+'</span></div>'
+    +'<div style="font-size:20px;font-weight:800;margin-top:8px">'+Number(movement.distanceZera||0).toFixed(2)+' Zera gouvernés · '+Number(movement.distanceM||0).toFixed(2)+' m</div>'
+    +'<div style="font-size:11px;color:var(--txt2);margin-top:6px">Projection territoriale candidate : '+(candidate.distanceZera==null?'—':Number(candidate.distanceZera).toFixed(2)+' Zera · '+Number(candidate.distanceM).toFixed(2)+' m')+'</div>'
+    +'<div style="font-size:11px;color:var(--txt3);margin-top:4px">GPS brut secondaire : '+(rawM==null?'—':Number(rawZ).toFixed(2)+' Zera · '+Number(rawM).toFixed(2)+' m')+'</div></div>';
+}
+
+function renderPhantomMigrationGovernance(governance){
+  if(!governance||governance.status==='LIBRARY_UNAVAILABLE')return '';
+  const local=governance.localWindow||{},w=governance.witnessGovernance||{},omeh=governance.omehContribution||{};
+  return '<div class="card" style="margin-top:12px;padding:14px;border:2px solid #8b5a9d;border-radius:9px;background:#fbf7fd">'
+    +'<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><strong>Séquence HSC · Continuité terrestre Zera™</strong><span style="font:11px var(--mono);color:#6b3fa0">'+escapeReadable(governance.hscContractStatus)+' · YEHI '+(governance.authorizationTokenIssued?'ÉMIS':'MANQUANT')+'</span></div>'
+    +'<div style="font-size:12px;margin-top:8px"><strong>'+escapeReadable(governance.problemId)+'</strong> → '+escapeReadable(governance.lawId)+' → '+escapeReadable(governance.hoqId)+' → '+escapeReadable(governance.sequenceId)+'</div>'
+    +'<div style="font-size:12px;margin-top:6px">Acquérir → autoriser → confirmer la rue → ouvrir P0 → ouvrir Zn−1/Zn/Zn+1 → évaluer les témoins → manifester ou maintenir</div>'
+    +(local.eligibleCells?'<div style="font-size:12px;margin-top:6px"><strong>Fenêtre gouvernable :</strong> '+local.eligibleCells.map(escapeReadable).join(' · ')+'</div>':'')
+    +(governance.bannedCandidateCellId?'<div style="font-size:12px;margin-top:6px;color:#9a2e2e"><strong>Cellule globale exclue avant score :</strong> '+escapeReadable(governance.bannedCandidateCellId)+'</div>':'')
+    +(w.required?'<div style="font-size:12px;margin-top:6px"><strong>Témoins :</strong> '+escapeReadable(w.independentFamilyCount)+' famille(s) indépendante(s) favorable(s) / '+escapeReadable(w.required)+' requises · persistance '+Number(w.persistenceRatio||0).toFixed(2)+'</div>':'')
+    +(omeh.score!=null?'<div style="font-size:12px;margin-top:6px"><strong>Contribution OmeH :</strong> '+escapeReadable(omeh.score)+'% · '+escapeReadable(omeh.level)+' · témoin contributif, jamais autorité unique</div>':'')
+    +'<div style="font-size:11px;color:var(--txt2);margin-top:6px"><strong>Décision :</strong> '+escapeReadable(governance.decision)+' · '+escapeReadable(governance.proof&&governance.proof.reason)+'</div></div>';
+}
+
+function renderGovernedPath(path){
+  if(!path||path.status==='LIBRARY_UNAVAILABLE'||path.status==='NO_PATH_REQUIRED_FOR_P1'||path.status==='ADJACENT_PATH_DELEGATED')return '';
+  const p=path.path||{},e=path.evidence||{},a=path.admission||{},cells=Array.isArray(p.cells)?p.cells:[],movement=path.governedMovement||{};
+  return '<div class="card" style="margin-top:12px;padding:14px;border:2px solid #b98222;border-radius:9px;background:#fff9ec">'
+    +'<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><strong>Zera Governed Path Resolver™ v0.1</strong><span style="font:11px var(--mono);color:#7a4b08">'+escapeReadable(path.status)+' · '+escapeReadable(path.decision)+'</span></div>'
+    +'<div style="font-size:12px;margin-top:8px"><strong>'+escapeReadable(path.problemId)+'</strong> → '+escapeReadable(path.lawId)+' → '+escapeReadable(path.hoqId)+' → '+escapeReadable(path.sequenceId)+'</div>'
+    +'<div style="font-size:12px;margin-top:7px"><strong>Origine gouvernée :</strong> '+escapeReadable(path.originZeraId)+'<br><strong>Destination candidate :</strong> '+escapeReadable(path.destinationCandidateZeraId)+'</div>'
+    +(a.source?'<div style="font-size:12px;margin-top:7px"><strong>Admission constitutive :</strong> '+escapeReadable(a.source)+'<br><strong>Proposition GPS brute :</strong> '+escapeReadable(a.observedGpsCandidateZeraId||'—')+' · autorité de gouvernance : NON</div>':'')
+    +(cells.length?'<div style="font-size:12px;margin-top:7px"><strong>Chemin Qedimah :</strong> '+cells.map(escapeReadable).join(' → ')+'</div>':'')
+    +'<div style="font-size:12px;margin-top:7px"><strong>Écart topologique :</strong> '+escapeReadable(p.transitionCount==null?'—':p.transitionCount+' transition(s)')+' · <strong>Direction :</strong> '+escapeReadable(p.direction||'—')+'</div>'
+    +(e.families?'<div style="font-size:12px;margin-top:7px"><strong>Témoins :</strong> '+e.families.map(function(x){return escapeReadable(x.id)+'='+(x.supports?'OUI':'non')}).join(' · ')+'</div>':'')
+    +'<div style="font-size:14px;font-weight:750;margin-top:8px"><strong>Déplacement manifesté :</strong> '+Number(movement.distanceZera||0).toFixed(0)+' Zera · '+Number(movement.distanceM||0).toFixed(2)+' m</div>'
+    +'<div style="font-size:11px;color:var(--txt2);margin-top:6px">'+escapeReadable(path.reason||'')+' · un chemin possible ne vaut jamais preuve de traversée.</div></div>';
+}
+
+function renderTerritorialStateEstimation(estimation){
+  if(!estimation||estimation.status==='STATE_ESTIMATOR_LIBRARY_UNAVAILABLE'||estimation.status==='DEPENDENCY_UNAVAILABLE')return '';
+  const belief=estimation.zeraBeliefSet||{},state=estimation.governedPresenceState||{},windowData=estimation.dynamicWindow||{};
+  const candidates=Array.isArray(belief.candidates)?belief.candidates.slice(0,3):[];
+  const paths=Array.isArray(estimation.pathHypotheses)?estimation.pathHypotheses:[];
+  return '<div class="card" style="margin-top:12px;padding:14px;border:2px solid #287b70;border-radius:9px;background:#f0fbf8">'
+    +'<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><strong>Zera Territorial State Estimator™ v0.1</strong><span style="font:11px var(--mono);color:#17665d">'+escapeReadable(estimation.status)+' · OBSERVATION SEULE</span></div>'
+    +'<div style="font-size:12px;margin-top:8px"><strong>'+escapeReadable(estimation.hsc&&estimation.hsc.problemId)+'</strong> → '+escapeReadable(estimation.hsc&&estimation.hsc.lawId)+' → '+escapeReadable(estimation.hsc&&estimation.hsc.hoqId)+' → '+escapeReadable(estimation.hsc&&estimation.hsc.sequenceId)+'</div>'
+    +'<div style="font-size:12px;margin-top:7px"><strong>Position gouvernée inchangée :</strong> '+escapeReadable(state.governedZeraId||'—')+'<br><strong>Zera estimée :</strong> '+escapeReadable(state.estimatedZeraId||'—')+'<br><strong>Plage :</strong> '+(state.positionRangeZeraIds||[]).map(escapeReadable).join(' · ')+'</div>'
+    +'<div style="font-size:12px;margin-top:7px"><strong>Fenêtre dynamique :</strong> '+escapeReadable(estimation.mode)+' · rayon '+escapeReadable(windowData.radiusZera)+' Zera · autorité de mutation : NON</div>'
+    +(windowData.excludedObservationCandidate?'<div style="font-size:12px;margin-top:7px;color:#9a2e2e"><strong>Hypothèse GPS hors fenêtre exclue :</strong> '+escapeReadable(windowData.excludedObservationCandidate.zeraId)+'</div>':'')
+    +(candidates.length?'<div style="font-size:12px;margin-top:7px"><strong>Soutiens relatifs :</strong> '+candidates.map(function(candidate){return escapeReadable(candidate.zeraId)+' = '+(Number(candidate.support||0)*100).toFixed(1)+'%'}).join(' · ')+'</div>':'')
+    +(paths.length?'<div style="font-size:12px;margin-top:7px"><strong>Chemins candidats :</strong> '+paths.map(function(path,index){return 'H'+index+' ['+(path.cells||[]).map(escapeReadable).join('→')+']'}).join(' · ')+'</div>':'')
+    +'<div style="font-size:11px;color:var(--txt2);margin-top:7px">Score heuristique relatif, non probabilité métrologique. La gouvernance existante reste seule autorité.</div></div>';
+}
+
+function renderValidatedPrefix(prefix){
+  if(!prefix||prefix.status==='VALIDATED_PREFIX_LIBRARY_UNAVAILABLE'||prefix.status==='PATH_UNAVAILABLE')return '';
+  const validated=Array.isArray(prefix.validatedPrefix)?prefix.validatedPrefix:[],suffix=Array.isArray(prefix.unresolvedSuffix)?prefix.unresolvedSuffix:[],transitions=Array.isArray(prefix.transitionEvidence)?prefix.transitionEvidence:[];
+  return '<div class="card" style="margin-top:12px;padding:14px;border:2px solid #3d6fb4;border-radius:9px;background:#f3f7ff">'
+    +'<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><strong>Zera Validated Prefix Resolver™ v0.1</strong><span style="font:11px var(--mono);color:#315c98">'+escapeReadable(prefix.status)+' · '+escapeReadable(prefix.decision)+'</span></div>'
+    +'<div style="font-size:12px;margin-top:8px"><strong>'+escapeReadable(prefix.problemId)+'</strong> → '+escapeReadable(prefix.lawId)+' → '+escapeReadable(prefix.hoqId)+' → '+escapeReadable(prefix.sequenceId)+'</div>'
+    +'<div style="font-size:12px;margin-top:7px"><strong>Préfixe validé :</strong> '+(validated.length?validated.map(escapeReadable).join(' → '):'∅')+'</div>'
+    +(suffix.length?'<div style="font-size:12px;margin-top:7px;color:#8a5a18"><strong>Suffixe non résolu :</strong> '+suffix.map(escapeReadable).join(' → ')+'</div>':'')
+    +'<div style="font-size:17px;font-weight:800;margin-top:8px">'+Number(prefix.governedMovement&&prefix.governedMovement.distanceZera||0).toFixed(0)+' transition(s) gouvernée(s) · '+Number(prefix.governedMovement&&prefix.governedMovement.distanceM||0).toFixed(2)+' m</div>'
+    +(transitions.length?'<div style="font-size:11px;margin-top:8px"><strong>Preuves par transition :</strong> '+transitions.map(function(item){return escapeReadable(item.fromZera)+'→'+escapeReadable(item.toZera)+' = '+escapeReadable(item.evidenceState)}).join(' · ')+'</div>':'')
+    +'<div style="font-size:11px;color:var(--txt2);margin-top:7px">Qedimah seul et GPS seul ne valident jamais une transition. Le premier passage non prouvé clôt le préfixe.</div></div>';
+}
+
 function renderDualComparison(observation,historical){
   const target=document.getElementById('tc-content');
   if(!target||!observation)return;
@@ -1200,7 +1367,7 @@ function renderDualComparison(observation,historical){
     +'<div class="dual-body"><div class="dual-grid">'
     +'<div class="dual-engine"><div class="dual-label">ICL PCNT™ v3.1</div><div class="dual-icl">'+observation.historicalIcl+'</div><div class="dual-meta">'+historical.quatre.makom.lat+' · '+historical.quatre.shaar.lat+' · '+historical.quatre.mishkan.lat+'<br>Graine historique · '+historical.shemGraine.lat+'</div></div>'
     +'<div class="dual-engine new"><div class="dual-label">ICL Constitution Engine™ v2.2</div><div class="dual-icl">'+newIcl+'</div><div class="dual-meta">'+newShem+'<br>Zera computationnelle · '+newZera+'</div></div>'
-    +'</div><div class="dual-observation"><strong>'+observation.testId+'</strong><br><span style="display:inline-block;margin:5px 0 3px;padding:5px 8px;border:1px solid rgba(255,255,255,.24);border-radius:6px;color:#fff;font-size:14px;font-weight:700">GPS d’entrée · '+escapeReadable(inputCoordinates)+'</span><br><span style="font-size:10px;opacity:.72">Source '+escapeReadable(inputSource)+' · '+inputSamples.length+' prise(s) d’acquisition'+(inputCapturedAt?' · '+escapeReadable(inputCapturedAt):'')+' · conservée sur 7 décimales</span><br><span style="font-size:18px;color:#fff;font-weight:700">'+escapeReadable(territorialReference)+'</span><br><span style="font-size:11px;opacity:.82">Déplacement du cycle · '+movementEstimate+'</span><br><span style="font-size:11px;opacity:.66">Observation expérimentale '+ZERA_CALIBRATION_VERSION+' · facteur '+ZERA_CALIBRATION_FACTOR.toFixed(3)+'</span><br><span style="font-size:11px;opacity:.66">GPS brut secondaire · '+rawDistance+' · incertitude '+accuracy+'</span><br>Entrée unique à 7 décimales appliquée aux deux moteurs : '+(observation.sameInputAppliedToBothEngines?'oui':'NON')+' · cellule du référentiel : '+(activeCell?'résolue':'non résolue')+'<br>ICL PCNT changée : '+(observation.historicalChanged?'oui':'non')+' · ICL Constitution changée : '+(observation.newChanged?'oui':'non')+' · classification : '+observation.transition+'</div>'+renderQedimahCard(observation.qedimah)+renderTerritorialAnchorCard(observation.territorialAnchor)+renderDestinationProximityCard(observation.destinationProximity)
+    +'</div><div class="dual-observation"><strong>'+observation.testId+'</strong><br><span style="display:inline-block;margin:5px 0 3px;padding:5px 8px;border:1px solid rgba(255,255,255,.24);border-radius:6px;color:#fff;font-size:14px;font-weight:700">GPS d’entrée · '+escapeReadable(inputCoordinates)+'</span><br><span style="font-size:10px;opacity:.72">Source '+escapeReadable(inputSource)+' · '+inputSamples.length+' prise(s) d’acquisition'+(inputCapturedAt?' · '+escapeReadable(inputCapturedAt):'')+' · conservée sur 7 décimales</span><br><span style="font-size:18px;color:#fff;font-weight:700">'+escapeReadable(territorialReference)+'</span><br><span style="font-size:11px;opacity:.82">Déplacement du cycle · '+movementEstimate+'</span><br><span style="font-size:11px;opacity:.66">Observation expérimentale '+ZERA_CALIBRATION_VERSION+' · facteur '+ZERA_CALIBRATION_FACTOR.toFixed(3)+'</span><br><span style="font-size:11px;opacity:.66">GPS brut secondaire · '+rawDistance+' · incertitude '+accuracy+'</span><br>Entrée unique à 7 décimales appliquée aux deux moteurs : '+(observation.sameInputAppliedToBothEngines?'oui':'NON')+' · cellule du référentiel : '+(activeCell?'résolue':'non résolue')+'<br>ICL PCNT changée : '+(observation.historicalChanged?'oui':'non')+' · ICL Constitution changée : '+(observation.newChanged?'oui':'non')+' · classification : '+observation.transition+'</div>'+renderGovernedMovement(observation)+renderPhantomMigrationGovernance(observation.zeraContinuityGovernance)+renderGovernedPath(observation.zeraPathGovernance)+renderValidatedPrefix(observation.zeraValidatedPrefix)+renderTerritorialStateEstimation(observation.territorialStateEstimation)+renderQedimahCard(observation.qedimah)+renderTerritorialAnchorCard(observation.territorialAnchor)+renderOmehPresenceCard(observation.omehPresence,observation.territorialAnchor)+renderDestinationProximityCard(observation.destinationProximity)
     +'<div class="dual-notes">'
     +'<label style="font-size:10px;color:var(--txt3)">Notes · ICL PCNT™ v3.1<textarea oninput="saveDualEngineNote(\''+observation.testId+'\',\'historical\',this.value)" placeholder="Observation sur le moteur historique…" style="width:100%;min-height:64px;margin-top:4px;padding:.5rem;border:1px solid var(--bord);border-radius:7px;font:11px var(--sans);resize:vertical"></textarea></label>'
     +'<label style="font-size:10px;color:var(--txt3)">Notes · ICL Constitution Engine™ v2.2<textarea oninput="saveDualEngineNote(\''+observation.testId+'\',\'constitution\',this.value)" placeholder="Observation sur le nouveau moteur…" style="width:100%;min-height:64px;margin-top:4px;padding:.5rem;border:1px solid var(--bord);border-radius:7px;font:11px var(--sans);resize:vertical"></textarea></label>'
@@ -1238,6 +1405,7 @@ function buildSelectedPointSheet(testId){
       historical:{name:'ICL PCNT™ v3.1',note:notes.historical,result:observation.engines.historical},
       constitution:{name:'ICL Constitution Engine™ v2.2',note:notes.constitution,result:observation.engines.candidate,view:observation.newEngineView}
     },
+    omehPresence:observation.omehPresence,
     comparison:{
       sameInputAppliedToBothEngines:observation.sameInputAppliedToBothEngines,
       historicalIcl:observation.historicalIcl,
@@ -1249,6 +1417,11 @@ function buildSelectedPointSheet(testId){
       distanceFromPreviousZera:observation.distanceFromPreviousZera,
       calibratedDistanceFromPreviousM:observation.calibratedDistanceFromPreviousM,
       calibratedDistanceFromPreviousZera:observation.calibratedDistanceFromPreviousZera,
+      zeraContinuityGovernance:observation.zeraContinuityGovernance,
+      zeraPathGovernance:observation.zeraPathGovernance,
+      zeraValidatedPrefix:observation.zeraValidatedPrefix,
+      territorialStateEstimation:observation.territorialStateEstimation,
+      territorialStateContracts:observation.territorialStateContracts,
       zeraSpatial:observation.zeraSpatial
     },
     territorialAnchor:observation.territorialAnchor,
@@ -1302,7 +1475,7 @@ function renderReadableRegistry(value,key,depth){
 function downloadReadableHtml(filename,title,summaryHtml){
   const html='<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
     +'<title>'+escapeReadable(title)+'</title><style>@page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:Georgia,serif;color:#26231f;background:#eeeae2;margin:0;padding:28px}main{max-width:900px;margin:auto;background:white;padding:42px;box-shadow:0 8px 30px #0002}.report-head{text-align:center;border-bottom:3px solid #187385;padding-bottom:20px}.brand{font:700 12px Arial,sans-serif;letter-spacing:2px;color:#187385;text-transform:uppercase}.report-head h1{font-size:31px;margin:12px 0 5px}.meta{color:#746f67;font-size:13px}.print-action{position:fixed;right:20px;top:20px;border:0;border-radius:24px;background:#176979;color:white;padding:11px 18px;font-weight:700;cursor:pointer}h2{font:700 18px Arial,sans-serif;margin:30px 0 12px;color:#176979;border-bottom:2px solid #176979;padding-bottom:7px;text-transform:uppercase;letter-spacing:.5px}h3,h4,h5,h6{font-family:Arial,sans-serif;color:#6b3fa0;margin:18px 0 7px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.card{border:1px solid #d8d2c7;border-radius:8px;padding:16px;background:#fcfbf8;break-inside:avoid}.value{font:700 19px Arial,sans-serif;color:#9a561b;margin:7px 0}.note{white-space:pre-wrap;background:#f8eedb;border-left:4px solid #bd741c;padding:12px}.zera-box{background:#edf7f7;border:2px solid #62aeb5;border-radius:8px;padding:16px;break-inside:avoid}.law{font-weight:700;color:#176979}.data-table{border:1px solid #d8d2c7;border-radius:6px;overflow:hidden;margin:6px 0 12px}.data-row{display:grid;grid-template-columns:minmax(180px,42%) 1fr;border-top:1px solid #e4dfd7}.data-row:first-child{border-top:0}.data-row span,.data-row strong{padding:8px 10px;word-break:break-word}.data-row span{background:#edf4f5;color:#31575c}.data-row strong{font-weight:500}.registry{page-break-before:always}.registry-group{break-inside:auto}.registry-group .registry-group{margin-left:10px}.point-sheet+.point-sheet{page-break-before:always}@media(max-width:700px){body{padding:0}main{padding:20px}.grid{grid-template-columns:1fr}.data-row{grid-template-columns:1fr}.print-action{position:static;margin:10px}}@media print{body{background:white;padding:0}main{box-shadow:none;max-width:none;padding:0}.print-action{display:none}}</style></head><body><button class="print-action" onclick="window.print()">Imprimer / Enregistrer en PDF</button><main>'
-    +'<header class="report-head"><div class="brand">Makom Intelligence™ · CorreIA LLC</div><h1>'+escapeReadable(title)+'</h1><div class="meta">Cockpit Spatial™ v4.0 - Makom Intelligence · '+escapeReadable(new Date().toLocaleString('fr-FR'))+'</div></header>'
+    +'<header class="report-head"><div class="brand">Makom Intelligence™ · CorreIA LLC</div><h1>'+escapeReadable(title)+'</h1><div class="meta">Cockpit Spatial™ v4.1 - Makom Intelligence · '+escapeReadable(new Date().toLocaleString('fr-FR'))+'</div></header>'
     +summaryHtml+'</main></body></html>';
   const url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
   const a=document.createElement('a');a.href=url;a.download=filename;a.click();
@@ -1349,8 +1522,10 @@ function buildDualSessionExport(){
     schemaVersion:'1.0',
     exportedAt:new Date().toISOString(),
     rule:'ONE_FROZEN_INPUT_TO_BOTH_ENGINES',
+    testTerritory:window.TanoAtchimonTerritoryV001?window.TanoAtchimonTerritoryV001.summary():null,
+    testTerritoryContract:window.ZeraHSCSequenceRegistry&&window.ZeraHSCSequenceRegistry.tanoTerritoryContract||null,
     engines:{historical:'ICL PCNT™ v3.1',candidate:'ICL Constitution Engine™ v2.2'},
-    zeraProtocol:{metersPerZera:ZERA_METERS,territorialReferenceAuthority:'PADA_PRIMARY_FIXED_REFERENCE',qedimah:{name:'Qedimah Territorial Potential™',value:159,sequence:'ALEPH_HE_TET',law:'P0_PRECEDES_P1_WITH_COMPLETE_STREET_ZERA_POTENTIAL',newP0OnlyOnConfirmedRoadTransition:true},historicalResolver:{name:'Zera Territorial Convergence Resolver™',version:'0.3',implementation:'Territorial Anchor Resolver™ v0.3',logic:'MULTI_SAMPLE_GPS_PLUS_FIXED_ZERA_PLUS_PADA_PLUS_PREVIOUS_ANCHOR'},omehResolver:{name:'OmeH Destination Proximity Resolver™',version:'0.1',logic:'ONE_GPS_SAMPLE_TO_FIXED_PADA_DESTINATION'},comparisonLaw:'PRESERVE_BOTH_LOGICS_AND_RUN_IN_PARALLEL',fixedCoordinateRegistry:'Zera Fixed Coordinate Registry™ v0.1',addressDomainRegistry:'Zera Address Domain Registry™ v0.1',addressDomainLaw:'OFFICIAL_ROAD_AND_ADDRESS_DOMAIN_OVERRIDE_NEAREST_ROAD',addressAllocationMethod:'NEIGHBOR_MIDPOINTS_PROVISIONAL',fixedCoordinateLaw:'PADA_ROAD_GEOMETRY_SEGMENTED_EVERY_0_36M',gpsMatch:'ZERA GPS MATCH™ v0.1',minimumConvergenceSamples:4,roadTransitionAllowed:true,gpsRole:'OBSERVATION_AND_PRESENCE_SENSOR',calibration:{version:ZERA_CALIBRATION_VERSION,factor:ZERA_CALIBRATION_FACTOR,status:'EXPERIMENTAL_OBSERVATION_ONLY',sourceTerrainZera:7,sourceGpsNetZera:10.7029627916},rawGpsAlwaysPreserved:true,googleAccuracyIsAdvisoryOnly:true,accuracyAdvisoryThresholdM:GPS_ZERA_MAX_ACCURACY_M,cellule10mHistoricalOnly:true,candidateSpatialStatus:'REFERENCE_CELL_COMPUTED_PRESENCE_ESTIMATED'},
+    zeraProtocol:{metersPerZera:ZERA_METERS,territorialReferenceAuthority:'PADA_PRIMARY_FIXED_REFERENCE',hscSequence:window.ZeraHSCSequenceRegistry&&window.ZeraHSCSequenceRegistry.contract||null,stateDataContract:window.ZeraHSCSequenceRegistry&&window.ZeraHSCSequenceRegistry.stateDataContract||null,stateEstimatorContract:window.ZeraHSCSequenceRegistry&&window.ZeraHSCSequenceRegistry.stateEstimatorContract||null,validatedPrefixContract:window.ZeraHSCSequenceRegistry&&window.ZeraHSCSequenceRegistry.validatedPrefixContract||null,validatedPrefixResolver:window.ZeraValidatedPrefixResolver?{name:'Zera Validated Prefix Resolver™',version:window.ZeraValidatedPrefixResolver.version}:null,stateEstimator:window.ZeraTerritorialStateEstimator?{name:'Zera Territorial State Estimator™',version:window.ZeraTerritorialStateEstimator.version,authority:'OBSERVATIONAL_ONLY'}:null,stateContractLibrary:window.ZeraTerritorialStateContracts?{schema:window.ZeraTerritorialStateContracts.schema,version:window.ZeraTerritorialStateContracts.version,types:window.ZeraTerritorialStateContracts.types}:null,earthboundGovernance:{name:'Zera Earthbound Continuity Governance™',version:'0.2',localWindow:'Zn-1_Zn_Zn+1',nonAdjacentCells:'BANNED_BEFORE_SCORING',minimumIndependentWitnesses:2,governedMovementValuesZera:[0,1],omehRole:'CONTRIBUTIVE_WITNESS_NEVER_SOLE_AUTHORITY'},qedimah:{name:'Qedimah Territorial Potential™',value:159,sequence:'ALEPH_HE_TET',law:'P0_PRECEDES_P1_WITH_COMPLETE_STREET_ZERA_POTENTIAL',newP0OnlyOnConfirmedRoadTransition:true},historicalResolver:{name:'Zera Territorial Convergence Resolver™',version:'0.3',implementation:'Territorial Anchor Resolver™ v0.3',logic:'MULTI_SAMPLE_GPS_PLUS_FIXED_ZERA_PLUS_PADA_PLUS_PREVIOUS_ANCHOR'},omehPresenceResolver:{name:'OmeH Presence Street Resolver™',version:'0.1',logic:'ONE_GPS_SAMPLE_TO_NEAREST_FIXED_PADA_ADDRESS_AND_OFFICIAL_STREET',authority:'CONTRIBUTIVE_WITNESS_WITH_EXPLICIT_SCORE'},omehResolver:{name:'OmeH Destination Proximity Resolver™',version:'0.1',logic:'ONE_GPS_SAMPLE_TO_FIXED_PADA_DESTINATION'},comparisonLaw:'ONE_FROZEN_GPS_INPUT_TO_INDEPENDENT_RESOLVERS',fixedCoordinateRegistry:'Zera Fixed Coordinate Registry™ v0.1',addressDomainRegistry:'Zera Address Domain Registry™ v0.1',addressDomainLaw:'OFFICIAL_ROAD_AND_ADDRESS_DOMAIN_OVERRIDE_NEAREST_ROAD',addressAllocationMethod:'NEIGHBOR_MIDPOINTS_PROVISIONAL',fixedCoordinateLaw:'PADA_ROAD_GEOMETRY_SEGMENTED_EVERY_0_36M',gpsMatch:'ZERA GPS MATCH™ v0.1',minimumConvergenceSamples:4,roadTransitionAllowed:true,gpsRole:'OBSERVATION_AND_PRESENCE_SENSOR',calibration:{version:ZERA_CALIBRATION_VERSION,factor:ZERA_CALIBRATION_FACTOR,status:'EXPERIMENTAL_OBSERVATION_ONLY',sourceTerrainZera:7,sourceGpsNetZera:10.7029627916},rawGpsAlwaysPreserved:true,googleAccuracyIsAdvisoryOnly:true,accuracyAdvisoryThresholdM:GPS_ZERA_MAX_ACCURACY_M,cellule10mHistoricalOnly:true,candidateSpatialStatus:'REFERENCE_CELL_COMPUTED_PRESENCE_ESTIMATED'},
     summary:{tests:chronological.length,qualified:chronological.filter(o=>o.measurementQualified).length,stable:chronological.filter(o=>o.transition==='ICL_STABLE').length,jitterCandidates:chronological.filter(o=>o.transition==='GPS_JITTER_CANDIDATE').length,transitionCandidates:chronological.filter(o=>o.transition==='ICL_TRANSITION_CANDIDATE').length},
     tests:chronological.map(function(observation){
       return Object.assign({},observation,{engineNotes:dualEngineNotes[observation.testId]||{historical:'',constitution:''}});
@@ -1472,12 +1647,24 @@ function locateMe(){
 
   const SEUIL_BON  = 15;
   const SEUIL_TERR = 50;
-  gpsAcquisitionSamples=[];
+  // Un rafraîchissement complète la session courante. Seule « Nouvelle
+  // génération » remet les prises à zéro.
+  if(!gpsAcquisitionStartedAt){
+    gpsAcquisitionSamples=[];
+    gpsAcquisitionStartedAt=new Date().toISOString();
+    gpsAcquisitionDecision=null;
+  }
+  if(gpsRefinementWatch!==null){
+    try{navigator.geolocation.clearWatch(gpsRefinementWatch);}catch(e){}
+    gpsRefinementWatch=null;
+  }
+  const acquisitionBox=document.getElementById('gacq');
+  if(acquisitionBox)acquisitionBox.style.display='block';
   let bestPos = null;
-  let refinementWatch = null;
 
   function recordSample(pos){
     gpsAcquisitionSamples.push({lat:pos.latitude,lon:pos.longitude,accuracyM:Number(pos.accuracy),capturedAt:new Date().toISOString()});
+    refreshAcquisitionGovernanceUI();
   }
 
   function applyPosition(pos){
@@ -1496,8 +1683,6 @@ function locateMe(){
       regimeColor='#C0392B';
     }
 
-    document.getElementById('gdot').className='gdot ok';
-    document.getElementById('gst').textContent='Position acquise · prête pour validation';
     document.getElementById('gcoords').style.display='grid';
     document.getElementById('glat').textContent=pos.latitude.toFixed(7)+'°';
     document.getElementById('glon').textContent=pos.longitude.toFixed(7)+'°';
@@ -1509,10 +1694,8 @@ function locateMe(){
       statusEl.style.fontSize='11px';
     }
     document.getElementById('gerr').style.display='none';
-    document.getElementById('btn-vg').disabled=false;
     btn.innerHTML='<i class="ti ti-refresh"></i> Rafraîchir';
     btn.disabled=false;
-    setNB(1,'✓','done');
   }
 
   // ÉTAPE 1 · getCurrentPosition · capture rapide et fiable
@@ -1521,24 +1704,28 @@ function locateMe(){
       bestPos = pos.coords;
       recordSample(bestPos);
       applyPosition(bestPos);
+      refreshAcquisitionGovernanceUI();
 
       // ÉTAPE 2 · watchPosition · raffinement silencieux pendant 3 secondes
-      refinementWatch = navigator.geolocation.watchPosition(
+      gpsRefinementWatch = navigator.geolocation.watchPosition(
         function(pos2){
           recordSample(pos2.coords);
           if(pos2.coords.accuracy < bestPos.accuracy){
             bestPos = pos2.coords;
             applyPosition(bestPos);
           }
+          refreshAcquisitionGovernanceUI();
         },
         function(){/* ignorer erreurs de raffinement */},
         {enableHighAccuracy:true, timeout:5000, maximumAge:0}
       );
+      const activeWatch=gpsRefinementWatch;
       setTimeout(function(){
-        if(refinementWatch!==null){
-          try{navigator.geolocation.clearWatch(refinementWatch);}catch(e){}
-          refinementWatch=null;
+        if(gpsRefinementWatch===activeWatch&&gpsRefinementWatch!==null){
+          try{navigator.geolocation.clearWatch(gpsRefinementWatch);}catch(e){}
+          gpsRefinementWatch=null;
         }
+        refreshAcquisitionGovernanceUI();
       }, 3000);
     },
     function(err){
@@ -1556,6 +1743,36 @@ function locateMe(){
     {enableHighAccuracy:true, timeout:10000, maximumAge:0}
   );
 
+}
+
+function refreshAcquisitionGovernanceUI(){
+  const box=document.getElementById('gacq'),title=document.getElementById('gacq-title'),detail=document.getElementById('gacq-detail');
+  const validate=document.getElementById('btn-vg'),dot=document.getElementById('gdot'),status=document.getElementById('gst');
+  if(!window.GPSAcquisitionGovernance){
+    gpsAcquisitionDecision={status:'GOVERNANCE_MODULE_UNAVAILABLE',validationAuthorized:false};
+  }else{
+    gpsAcquisitionDecision=window.GPSAcquisitionGovernance.evaluate(gpsAcquisitionSamples,{startedAt:gpsAcquisitionStartedAt});
+  }
+  const decision=gpsAcquisitionDecision,count=decision.freshSampleCount||0,minimum=decision.minimumSamples||4;
+  if(box)box.style.display='block';
+  const remainingSeconds=Math.max(0,((decision.minimumDurationMs||0)-(decision.durationMs||0))/1000);
+  if(detail)detail.textContent='Prises cumulées : '+count+'/'+minimum+' · durée '+((decision.durationMs||0)/1000).toFixed(1)+' s · dispersion '+Number(decision.medianSpreadM||0).toFixed(2)+' m'+(remainingSeconds>0?' · attendre encore '+remainingSeconds.toFixed(1)+' s':'');
+  if(decision.validationAuthorized){
+    if(title){title.textContent='GPS convergent · validation autorisée';title.style.color='var(--vert)';}
+    if(status)status.textContent='GPS convergent · '+count+' prises gouvernées';
+    if(dot)dot.className='gdot ok';
+    if(validate)validate.disabled=false;
+    setNB(1,'✓','done');
+  }else{
+    let waiting='GPS reçu · stabilité non démontrée';
+    if(decision.status==='GPS_UNSTABLE')waiting='GPS instable · poursuivre l\'acquisition';
+    if(decision.status==='GPS_WAITING_FOR_FRESH_DURATION')waiting='Prises suffisantes · fenêtre temporelle incomplète';
+    if(count<minimum)waiting='GPS reçu · '+count+'/'+minimum+' prises cumulées';
+    if(title){title.textContent=waiting;title.style.color='var(--or)';}
+    if(status)status.textContent=waiting;
+    if(dot)dot.className='gdot';
+    if(validate)validate.disabled=true;
+  }
 }
 
 function showGE(m){
@@ -1592,6 +1809,12 @@ async function launch(m){
   let lat,lon,src;
   if(m==='gps'){
     if(!gpsCoords)return;
+    if(!gpsAcquisitionDecision||!gpsAcquisitionDecision.validationAuthorized){
+      refreshAcquisitionGovernanceUI();
+      const err=document.getElementById('gerr');
+      if(err){err.style.display='block';err.textContent='Validation suspendue · attendez au moins 4 prises GPS fraîches et convergentes.';}
+      return;
+    }
     lat=gpsCoords.latitude;lon=gpsCoords.longitude;src='GPS · QTSE™';
   }else{
     lat=parseFloat(document.getElementById('ilat').value);
@@ -1600,6 +1823,10 @@ async function launch(m){
     src='Manuel';
   }
 
+  const fieldZeraRaw=String((document.getElementById('ifieldzera')||{}).value||'').trim();
+  const fieldDirection=String((document.getElementById('ifielddirection')||{}).value||'').trim();
+  const fieldZera=fieldZeraRaw===''?null:Number(fieldZeraRaw);
+  const calibratedFieldWitness=Number.isInteger(fieldZera)&&fieldZera>=0&&fieldDirection?Object.freeze({confirmed:true,traversedZera:fieldZera,direction:fieldDirection,source:'HUMAN_CALIBRATED_FIELD_DECLARATION',declaredAt:new Date().toISOString()}):null;
   const inputSnapshot=Object.freeze({
     lat:canonicalCoordinate7(lat),
     lon:canonicalCoordinate7(lon),
@@ -1607,6 +1834,8 @@ async function launch(m){
     accuracyM:m==='gps'&&gpsCoords&&Number.isFinite(Number(gpsCoords.accuracy))?Number(gpsCoords.accuracy):null,
     capturedAt:new Date().toISOString(),
     acquisitionSamples:m==='gps'?gpsAcquisitionSamples.map(function(sample){return Object.assign({},sample);}):[],
+    acquisitionGovernance:m==='gps'&&gpsAcquisitionDecision?Object.freeze(Object.assign({},gpsAcquisitionDecision)):null,
+    calibratedFieldWitness:calibratedFieldWitness,
     destination:Object.freeze({
       number:String((document.getElementById('idestnum')||{}).value||'').trim(),
       street:String((document.getElementById('ideststreet')||{}).value||'').trim()
@@ -1941,9 +2170,17 @@ function resetAll(){
   const ilat=document.getElementById('ilat');const ilon=document.getElementById('ilon');
   if(ilat)ilat.value='';if(ilon)ilon.value='';
   gpsCoords=null;
+  gpsAcquisitionSamples=[];
+  gpsAcquisitionStartedAt=null;
+  gpsAcquisitionDecision=null;
+  if(gpsRefinementWatch!==null){
+    try{navigator.geolocation.clearWatch(gpsRefinementWatch);}catch(e){}
+    gpsRefinementWatch=null;
+  }
   const gdot=document.getElementById('gdot');if(gdot)gdot.className='gdot';
   const gst=document.getElementById('gst');if(gst)gst.textContent='Position non acquise';
   const gcoords=document.getElementById('gcoords');if(gcoords)gcoords.style.display='none';
+  const gacq=document.getElementById('gacq');if(gacq)gacq.style.display='none';
   const gerr=document.getElementById('gerr');if(gerr)gerr.style.display='none';
   const bvg=document.getElementById('btn-vg');if(bvg)bvg.disabled=true;
   const bvm=document.getElementById('btn-vm');if(bvm){bvm.disabled=true;bvm.className='btn btn-g';bvm.textContent='Valider · lancer le pipeline ↗';}
@@ -2112,8 +2349,22 @@ function dlPayload(){
   a.download='TerritorialContext-'+(currentPayload.signatureId||'export')+'-v3.json';
   a.click();
 }
+
+// Contrat minimal du banc de test : expose uniquement les états nécessaires
+// sans dupliquer les moteurs ni rendre leurs variables internes mutables.
+window.CockpitTrajectoryBridge=Object.freeze({
+  getHistory:function(){return dualEngineHistory;},
+  getAcquisition:function(){return {coords:gpsCoords,decision:gpsAcquisitionDecision,samples:gpsAcquisitionSamples.slice()};},
+  resetAcquisition:function(){
+    gpsCoords=null;gpsAcquisitionSamples=[];gpsAcquisitionStartedAt=null;gpsAcquisitionDecision=null;
+    if(gpsRefinementWatch!==null){try{navigator.geolocation.clearWatch(gpsRefinementWatch);}catch(e){}gpsRefinementWatch=null;}
+    const validate=document.getElementById('btn-vg');if(validate)validate.disabled=true;
+  }
+});
 </script>
 <script src="icl-constitution-engine-v2.2.js"></script>
+<link rel="stylesheet" href="trajectory-test-bench-v0.1.css">
+<script src="trajectory-test-bench-v0.1.js"></script>
 
 <!-- HIST MODAL -->
 <div class="hist-modal-overlay" id="hist-modal-overlay" onclick="closeModal(event)">
