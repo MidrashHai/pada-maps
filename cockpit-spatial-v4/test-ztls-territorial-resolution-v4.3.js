@@ -1,6 +1,6 @@
 const assert=require('assert');
 const core=require('./ztls-territorial-resolution-v4.3.js');
-function raw(z,s){return {point:{lat:5.38,lon:-3.95},accuracy:11,territorialAnchor:{road:{street:'RUE TANO ATCHIMON',chainageFromPartStartM:s},selectedAddress:{number:99},zeraCell:{cellId:'ZTS.COCODY.R11895.P00.Z'+String(z).padStart(6,'0'),offsetWithinCellM:s%0.36},gpsInput:{lat:5.38,lon:-3.95,accuracyM:11},observationFusion:{sampleCount:16,medianSpreadM:4}},territorialStateEstimation:{zeraBeliefSet:{estimatedZeraId:'ZTS.COCODY.R11895.P00.Z'+String(z).padStart(6,'0')},governedPresenceState:{governedZeraId:'ZTS.COCODY.R11895.P00.Z'+String(z).padStart(6,'0')}}};}
+function raw(z,s,timestamp){return {timestamp:timestamp,point:{lat:5.38,lon:-3.95},accuracy:11,territorialAnchor:{road:{street:'RUE TANO ATCHIMON',chainageFromPartStartM:s},selectedAddress:{number:99},zeraCell:{cellId:'ZTS.COCODY.R11895.P00.Z'+String(z).padStart(6,'0'),offsetWithinCellM:s%0.36},gpsInput:{lat:5.38,lon:-3.95,accuracyM:11},observationFusion:{sampleCount:16,medianSpreadM:4}},territorialStateEstimation:{zeraBeliefSet:{estimatedZeraId:'ZTS.COCODY.R11895.P00.Z'+String(z).padStart(6,'0')},governedPresenceState:{governedZeraId:'ZTS.COCODY.R11895.P00.Z'+String(z).padStart(6,'0')}}};}
 const a=core.makeObservation('G01','S1',raw(20,7.2),null);
 const b=core.makeObservation('G01','S1',raw(60,21.6),a);
 assert(Object.isFrozen(a));
@@ -12,4 +12,9 @@ assert.equal(judged.comparison.zeraConvergence,true);
 assert.throws(()=>core.addHumanWitness(judged,{confirmed:false}),/WITNESS_ALREADY_RECORDED/);
 assert.equal(core.nextAllowed('G01','INCONNU','CONTEXT_RESOLVED'),true);
 assert.equal(core.nextAllowed('G01','INCONNU','ANCHOR_A_SEALED'),false);
-console.log('ZT­LS v4.3: 8 assertions passed');
+const requestedAt=Date.parse('2026-08-24T19:35:30.000Z');
+const eligible=core.qedimahCandidate([raw(60,21.6,'2026-08-24T19:35:00.000Z')],requestedAt);
+assert.equal(eligible.ageAtRequestMs,30000);
+assert.equal(core.qedimahCandidate([raw(60,21.6,'2026-08-24T19:34:59.999Z')],requestedAt),null);
+assert.equal(core.qedimahCandidate([raw(60,21.6,null)],requestedAt),null);
+console.log('ZT­LS v4.3.1: 11 assertions passed');
