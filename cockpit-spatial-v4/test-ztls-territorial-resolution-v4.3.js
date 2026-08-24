@@ -17,4 +17,6 @@ const eligible=core.qedimahCandidate([raw(60,21.6,'2026-08-24T19:35:00.000Z')],r
 assert.equal(eligible.ageAtRequestMs,30000);
 assert.equal(core.qedimahCandidate([raw(60,21.6,'2026-08-24T19:34:59.999Z')],requestedAt),null);
 assert.equal(core.qedimahCandidate([raw(60,21.6,null)],requestedAt),null);
-console.log('ZT­LS v4.3.1: 11 assertions passed');
+assert.equal(core.gpsWaitMs,20000);
+assert.equal(core.qedimahMaxAgeMs,30000);
+console.log('ZT­LS v4.3.2: 13 assertions passed');
