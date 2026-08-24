@@ -2352,9 +2352,44 @@ function dlPayload(){
 
 // Contrat minimal du banc de test : expose uniquement les états nécessaires
 // sans dupliquer les moteurs ni rendre leurs variables internes mutables.
+let qedimahWindowRequestInFlight=false;
+function requestQedimahWindow(options){
+  const request=options||{},timeoutMs=Number.isFinite(Number(request.timeoutMs))?Number(request.timeoutMs):20000;
+  if(qedimahWindowRequestInFlight)return Promise.reject(new Error('QEDIMAH_WINDOW_REQUEST_ALREADY_RUNNING'));
+  qedimahWindowRequestInFlight=true;
+  const requestedAt=new Date().toISOString(),historyBefore=dualEngineHistory.length,previous=dualEngineHistory[0]||null;
+  gpsCoords=null;gpsAcquisitionSamples=[];gpsAcquisitionStartedAt=null;gpsAcquisitionDecision=null;
+  if(gpsRefinementWatch!==null){try{navigator.geolocation.clearWatch(gpsRefinementWatch);}catch(e){}gpsRefinementWatch=null;}
+  try{locateMe();}catch(error){qedimahWindowRequestInFlight=false;return Promise.reject(error);}
+  return new Promise(function(resolve){
+    const started=Date.now();
+    const finish=function(result){qedimahWindowRequestInFlight=false;resolve(Object.freeze(result));};
+    const timer=setInterval(async function(){
+      if(gpsAcquisitionDecision&&gpsAcquisitionDecision.validationAuthorized&&gpsCoords){
+        clearInterval(timer);
+        try{
+          await launch('gps');
+          const observation=dualEngineHistory.length>historyBefore?dualEngineHistory[0]:null;
+          if(observation){
+            finish({status:'NEW_QEDIMAH_WINDOW',requestId:request.requestId||null,groupId:request.groupId||null,role:request.role||null,requestedAt,completedAt:new Date().toISOString(),newSensorEvidence:true,observation,qedimah:observation.qedimah||null});
+            return;
+          }
+        }catch(error){
+          finish({status:'QEDIMAH_FAILED',requestId:request.requestId||null,groupId:request.groupId||null,role:request.role||null,requestedAt,completedAt:new Date().toISOString(),newSensorEvidence:false,error:String(error&&error.message||error),observation:null,qedimah:null});
+          return;
+        }
+        finish({status:'QEDIMAH_FAILED',requestId:request.requestId||null,groupId:request.groupId||null,role:request.role||null,requestedAt,completedAt:new Date().toISOString(),newSensorEvidence:false,error:'PIPELINE_DID_NOT_PRODUCE_OBSERVATION',observation:null,qedimah:null});
+      }else if(Date.now()-started>=timeoutMs){
+        clearInterval(timer);
+        finish({status:previous?'QEDIMAH_HOLD':'QEDIMAH_FAILED',requestId:request.requestId||null,groupId:request.groupId||null,role:request.role||null,requestedAt,completedAt:new Date().toISOString(),newSensorEvidence:false,error:previous?null:'NO_QEDIMAH_WINDOW_AVAILABLE',observation:previous,qedimah:previous&&previous.qedimah||null});
+      }
+    },250);
+  });
+}
 window.CockpitTrajectoryBridge=Object.freeze({
   getHistory:function(){return dualEngineHistory;},
   getAcquisition:function(){return {coords:gpsCoords,decision:gpsAcquisitionDecision,samples:gpsAcquisitionSamples.slice()};},
+  requestQedimahWindow:requestQedimahWindow,
   resetAcquisition:function(){
     gpsCoords=null;gpsAcquisitionSamples=[];gpsAcquisitionStartedAt=null;gpsAcquisitionDecision=null;
     if(gpsRefinementWatch!==null){try{navigator.geolocation.clearWatch(gpsRefinementWatch);}catch(e){}gpsRefinementWatch=null;}
@@ -2365,8 +2400,8 @@ window.CockpitTrajectoryBridge=Object.freeze({
 <script src="icl-constitution-engine-v2.2.js"></script>
 <link rel="stylesheet" href="trajectory-test-bench-v0.2.css">
 <script src="trajectory-test-bench-v0.2.js"></script>
-<link rel="stylesheet" href="ztls-territorial-resolution-v4.3.css?v=4.3.2">
-<script src="ztls-territorial-resolution-v4.3.js?v=4.3.2"></script>
+<link rel="stylesheet" href="ztls-territorial-resolution-v4.3.css?v=4.4.0">
+<script src="ztls-territorial-resolution-v4.3.js?v=4.4.0"></script>
 
 <!-- HIST MODAL -->
 <div class="hist-modal-overlay" id="hist-modal-overlay" onclick="closeModal(event)">

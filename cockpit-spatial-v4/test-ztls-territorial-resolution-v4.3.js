@@ -1,4 +1,5 @@
 const assert=require('assert');
+const fs=require('fs');
 const core=require('./ztls-territorial-resolution-v4.3.js');
 function raw(z,s,timestamp){return {timestamp:timestamp,point:{lat:5.38,lon:-3.95},accuracy:11,territorialAnchor:{road:{street:'RUE TANO ATCHIMON',chainageFromPartStartM:s},selectedAddress:{number:99},zeraCell:{cellId:'ZTS.COCODY.R11895.P00.Z'+String(z).padStart(6,'0'),offsetWithinCellM:s%0.36},gpsInput:{lat:5.38,lon:-3.95,accuracyM:11},observationFusion:{sampleCount:16,medianSpreadM:4}},territorialStateEstimation:{zeraBeliefSet:{estimatedZeraId:'ZTS.COCODY.R11895.P00.Z'+String(z).padStart(6,'0')},governedPresenceState:{governedZeraId:'ZTS.COCODY.R11895.P00.Z'+String(z).padStart(6,'0')}}};}
 const a=core.makeObservation('G01','S1',raw(20,7.2),null);
@@ -19,4 +20,12 @@ assert.equal(core.qedimahCandidate([raw(60,21.6,'2026-08-24T19:34:59.999Z')],req
 assert.equal(core.qedimahCandidate([raw(60,21.6,null)],requestedAt),null);
 assert.equal(core.gpsWaitMs,20000);
 assert.equal(core.qedimahMaxAgeMs,30000);
-console.log('ZT­LS v4.3.2: 13 assertions passed');
+assert.equal(core.version,'4.4.0');
+assert.equal(core.qedimahWindowStatus({status:'NEW_QEDIMAH_WINDOW',newSensorEvidence:true,observation:{}}),'NEW_QEDIMAH_WINDOW');
+assert.equal(core.qedimahWindowStatus({status:'QEDIMAH_HOLD',newSensorEvidence:false,observation:{}}),'QEDIMAH_HOLD');
+assert.equal(core.qedimahWindowStatus({status:'NEW_QEDIMAH_WINDOW',newSensorEvidence:false,observation:{}}),'QEDIMAH_FAILED');
+const cockpit=fs.readFileSync(__dirname+'/5-cockpit-spatial-v3_1_stable 20 av soir - 3 Aout 2026.html','utf8');
+assert(cockpit.includes('requestQedimahWindow:requestQedimahWindow'));
+assert(cockpit.includes("status:'NEW_QEDIMAH_WINDOW'"));
+assert(cockpit.includes("status:previous?'QEDIMAH_HOLD':'QEDIMAH_FAILED'"));
+console.log('ZT­LS v4.4: 20 assertions passed');
