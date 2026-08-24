@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0A0A14">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Cockpit Spatial™ v4.1 — Acquisition gouvernée</title>
+<title>Cockpit Spatial™ v4.2 — Territorial Evidence Test Bench™</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.31.0/webfont/tabler-icons.min.css">
 <style>
 :root{
@@ -272,7 +272,7 @@ html,body{height:100%;background:var(--surf);color:var(--txt);font-family:system
 <!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-top">
-    <div class="sidebar-logo">Cockpit Spatial™ v4.1</div>
+    <div class="sidebar-logo">Cockpit Spatial™ v4.2</div>
     <div class="sidebar-sub">Makom Intelligence · <span class="v2-badge">LABORATOIRE</span></div>
     <span class="sidebar-heb">שֵׁם הַמָּקוֹם</span>
   </div>
@@ -535,7 +535,7 @@ html,body{height:100%;background:var(--surf);color:var(--txt);font-family:system
 
       <div class="card">
         <div class="card-head">
-          <span class="card-title">Cockpit Spatial™ v4.1 · Territorial API Hub</span>
+          <span class="card-title">Cockpit Spatial™ v4.2 · Territorial Evidence Test Bench™</span>
           <span class="badge" style="background:var(--surf2);color:var(--txt3);font-size:10px">LAB → API</span>
         </div>
         <div class="card-body">
@@ -1049,7 +1049,7 @@ const PADA_TERRITORIAL_REGISTRY=Object.freeze({
   markerRule:'ONE_MAP_MARKER_PER_PADA_ADDRESS_POINT'
 });
 const COCKPIT_ARCHITECTURE=Object.freeze({
-  officialName:'Cockpit Spatial™ v4.1 - Makom Intelligence',
+  officialName:'Cockpit Spatial™ v4.2 - Edut haMa\'avar Campaign 01',
   role:'TERRITORIAL_LAB_AND_API_PROVIDER',
   consumers:[
     {id:'maps.pada.ci',name:'Maps.pada.ci',function:'Carte territoriale avec agent conversationnel pour orienter les résidents depuis leur contexte, leur position GPS, leur destination ou leur recherche'},
@@ -1475,7 +1475,7 @@ function renderReadableRegistry(value,key,depth){
 function downloadReadableHtml(filename,title,summaryHtml){
   const html='<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
     +'<title>'+escapeReadable(title)+'</title><style>@page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:Georgia,serif;color:#26231f;background:#eeeae2;margin:0;padding:28px}main{max-width:900px;margin:auto;background:white;padding:42px;box-shadow:0 8px 30px #0002}.report-head{text-align:center;border-bottom:3px solid #187385;padding-bottom:20px}.brand{font:700 12px Arial,sans-serif;letter-spacing:2px;color:#187385;text-transform:uppercase}.report-head h1{font-size:31px;margin:12px 0 5px}.meta{color:#746f67;font-size:13px}.print-action{position:fixed;right:20px;top:20px;border:0;border-radius:24px;background:#176979;color:white;padding:11px 18px;font-weight:700;cursor:pointer}h2{font:700 18px Arial,sans-serif;margin:30px 0 12px;color:#176979;border-bottom:2px solid #176979;padding-bottom:7px;text-transform:uppercase;letter-spacing:.5px}h3,h4,h5,h6{font-family:Arial,sans-serif;color:#6b3fa0;margin:18px 0 7px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.card{border:1px solid #d8d2c7;border-radius:8px;padding:16px;background:#fcfbf8;break-inside:avoid}.value{font:700 19px Arial,sans-serif;color:#9a561b;margin:7px 0}.note{white-space:pre-wrap;background:#f8eedb;border-left:4px solid #bd741c;padding:12px}.zera-box{background:#edf7f7;border:2px solid #62aeb5;border-radius:8px;padding:16px;break-inside:avoid}.law{font-weight:700;color:#176979}.data-table{border:1px solid #d8d2c7;border-radius:6px;overflow:hidden;margin:6px 0 12px}.data-row{display:grid;grid-template-columns:minmax(180px,42%) 1fr;border-top:1px solid #e4dfd7}.data-row:first-child{border-top:0}.data-row span,.data-row strong{padding:8px 10px;word-break:break-word}.data-row span{background:#edf4f5;color:#31575c}.data-row strong{font-weight:500}.registry{page-break-before:always}.registry-group{break-inside:auto}.registry-group .registry-group{margin-left:10px}.point-sheet+.point-sheet{page-break-before:always}@media(max-width:700px){body{padding:0}main{padding:20px}.grid{grid-template-columns:1fr}.data-row{grid-template-columns:1fr}.print-action{position:static;margin:10px}}@media print{body{background:white;padding:0}main{box-shadow:none;max-width:none;padding:0}.print-action{display:none}}</style></head><body><button class="print-action" onclick="window.print()">Imprimer / Enregistrer en PDF</button><main>'
-    +'<header class="report-head"><div class="brand">Makom Intelligence™ · CorreIA LLC</div><h1>'+escapeReadable(title)+'</h1><div class="meta">Cockpit Spatial™ v4.1 - Makom Intelligence · '+escapeReadable(new Date().toLocaleString('fr-FR'))+'</div></header>'
+    +'<header class="report-head"><div class="brand">Makom Intelligence™ · CorreIA LLC</div><h1>'+escapeReadable(title)+'</h1><div class="meta">Cockpit Spatial™ v4.2 · Territorial Evidence Test Bench™ · '+escapeReadable(new Date().toLocaleString('fr-FR'))+'</div></header>'
     +summaryHtml+'</main></body></html>';
   const url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
   const a=document.createElement('a');a.href=url;a.download=filename;a.click();
@@ -2363,8 +2363,8 @@ window.CockpitTrajectoryBridge=Object.freeze({
 });
 </script>
 <script src="icl-constitution-engine-v2.2.js"></script>
-<link rel="stylesheet" href="trajectory-test-bench-v0.1.css">
-<script src="trajectory-test-bench-v0.1.js"></script>
+<link rel="stylesheet" href="trajectory-test-bench-v0.2.css">
+<script src="trajectory-test-bench-v0.2.js"></script>
 
 <!-- HIST MODAL -->
 <div class="hist-modal-overlay" id="hist-modal-overlay" onclick="closeModal(event)">

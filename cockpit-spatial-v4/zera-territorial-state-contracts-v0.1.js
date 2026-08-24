@@ -33,7 +33,7 @@
       type,
       objectId:objectId||id(type.toUpperCase(),Date.now()),
       producedAt:new Date().toISOString(),
-      producer:producer||'Cockpit Spatial™ v4.1',
+      producer:producer||'Cockpit Spatial™ v4.2',
       authority:'CONTRACTUAL_DATA_NOT_GOVERNANCE_DECISION'
     },payload));
   }
